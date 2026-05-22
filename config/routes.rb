@@ -1,6 +1,19 @@
 Spree::Core::Engine.add_routes do
   namespace :api, defaults: { format: 'json' } do
     namespace :v3 do
+      namespace :admin do
+        resources :reviews, only: [:index, :show, :update, :destroy] do
+          member do
+            post :approve
+            post :reject
+          end
+        end
+
+        resources :review_questions, except: [:new, :edit] do
+          resources :options, except: [:new, :edit], controller: 'review_question_options'
+        end
+      end
+
       namespace :store do
         resources :products, only: [] do
           resources :reviews, only: [:index, :create] do

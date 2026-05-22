@@ -11,6 +11,12 @@ module Spree
     attribute :helpful_count, :integer, default: 0
     attribute :not_helpful_count, :integer, default: 0
 
+    self.whitelisted_ransackable_attributes = %w[
+      product_id store_id user_id rating status verified_purchase reviewer_name
+      locale helpful_count not_helpful_count created_at updated_at
+    ]
+    self.whitelisted_ransackable_associations = %w[product store user answers review_media]
+
     belongs_to :product, class_name: 'Spree::Product', inverse_of: :reviews, touch: true
     belongs_to :store, class_name: 'Spree::Store'
     belongs_to :user, class_name: Spree.user_class.to_s, optional: true

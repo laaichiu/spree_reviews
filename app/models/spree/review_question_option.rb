@@ -5,6 +5,11 @@ module Spree
     attribute :active, :boolean, default: true
     attribute :position, :integer, default: 0
 
+    self.whitelisted_ransackable_attributes = %w[
+      review_question_id value label active position created_at updated_at
+    ]
+    self.whitelisted_ransackable_associations = %w[question answers]
+
     belongs_to :question, class_name: 'Spree::ReviewQuestion', foreign_key: :review_question_id,
              inverse_of: :options
     has_many :answers, class_name: 'Spree::ReviewAnswer', foreign_key: :review_question_option_id,

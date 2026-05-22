@@ -10,6 +10,12 @@ module Spree
     attribute :active, :boolean, default: true
     attribute :position, :integer, default: 0
 
+    self.whitelisted_ransackable_attributes = %w[
+      store_id product_id category_id key label kind applies_to filterable
+      required active position created_at updated_at
+    ]
+    self.whitelisted_ransackable_associations = %w[store product category options]
+
     belongs_to :store, class_name: 'Spree::Store'
     belongs_to :product, class_name: 'Spree::Product', optional: true
     belongs_to :category, class_name: 'Spree::Taxon', optional: true
@@ -27,6 +33,7 @@ module Spree
     validates :filterable, :required, :active, inclusion: { in: [true, false] }
     validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
     validate :target_matches_applies_to
+    validate :target_belongs_to_store
 
     scope :active, -> { where(active: true) }
     scope :filterable, -> { where(filterable: true) }
@@ -60,6 +67,18 @@ module Spree
       when 'category'
         errors.add(:category, :blank) if category_id.blank?
         errors.add(:product, :present) if product_id.present?
+      end
+    end
+
+    def target_belongs_to_store
+      return if store.blank?
+
+      if product.present? && !product.stores.exists?(id: store.id)
+        errors.add(:product, :invalid)
+      end
+
+      if category.present? && category.taxonomy&.store_id != store.id
+        errors.add(:category, :invalid)
       end
     end
   end
