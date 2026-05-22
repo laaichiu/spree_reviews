@@ -43,6 +43,21 @@ RSpec.describe Spree::Review, type: :model do
 
       expect(described_class.with_answer(question_key: 'body_type', values: ['curvy'])).to contain_exactly(matching_review)
     end
+
+    it 'filters reviews by boolean and scale answer values' do
+      recommend_question = create(:review_question, :boolean, store: store, key: 'recommend')
+      fit_scale_question = create(:review_question, :scale, store: store, key: 'fit_score')
+      matching_review = create(:review, :approved, product: product, store: store)
+      other_review = create(:review, :approved, product: product, store: store)
+
+      create(:review_answer, review: matching_review, question: recommend_question, option: nil, value_boolean: false)
+      create(:review_answer, review: other_review, question: recommend_question, option: nil, value_boolean: true)
+      create(:review_answer, review: matching_review, question: fit_scale_question, option: nil, value_number: 4)
+      create(:review_answer, review: other_review, question: fit_scale_question, option: nil, value_number: 2)
+
+      expect(described_class.with_answer(question_key: 'recommend', values: ['false'])).to contain_exactly(matching_review)
+      expect(described_class.with_answer(question_key: 'fit_score', values: ['4'])).to contain_exactly(matching_review)
+    end
   end
 
   describe 'summary recalculation' do

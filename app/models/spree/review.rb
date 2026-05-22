@@ -48,13 +48,57 @@ module Spree
     after_commit :recalculate_product_review_summary
 
     def self.with_answer(question_key:, values:)
-      values = Array(values).reject(&:blank?)
+      values = Array(values).reject { |value| value.nil? || (value.respond_to?(:empty?) && value.empty?) }
       return none if question_key.blank? || values.empty?
 
-      joins(answers: [:question, :option])
-        .where(spree_review_questions: { key: question_key })
-        .where(spree_review_question_options: { value: values })
-        .distinct
+      query = joins(answers: :question).
+              left_joins(answers: :option).
+              where(spree_review_questions: { key: question_key })
+      conditions = []
+      bind_values = {}
+      text_values = values.map(&:to_s)
+      numeric_values = values.filter_map { |value| numeric_filter_value(value) }
+      boolean_values = values.map { |value| boolean_filter_value(value) }.reject(&:nil?).uniq
+
+      unless text_values.empty?
+        conditions << 'spree_review_question_options.value IN (:text_values)'
+        conditions << 'spree_review_answers.value_text IN (:text_values)'
+        bind_values[:text_values] = text_values
+      end
+
+      unless numeric_values.empty?
+        conditions << 'spree_review_answers.value_number IN (:numeric_values)'
+        bind_values[:numeric_values] = numeric_values
+      end
+
+      unless boolean_values.empty?
+        conditions << 'spree_review_answers.value_boolean IN (:boolean_values)'
+        bind_values[:boolean_values] = boolean_values
+      end
+
+      query.where(conditions.join(' OR '), bind_values).distinct
+    end
+
+    def self.numeric_filter_value(value)
+      BigDecimal(value.to_s)
+    rescue ArgumentError
+      nil
+    end
+
+    def self.boolean_filter_value(value)
+      case value
+      when true, false
+        value
+      else
+        {
+          'true' => true,
+          '1' => true,
+          'yes' => true,
+          'false' => false,
+          '0' => false,
+          'no' => false
+        }[value.to_s.downcase]
+      end
     end
 
     def approve!
