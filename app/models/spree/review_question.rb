@@ -41,13 +41,20 @@ module Spree
     scope :ordered, -> { order(:position, :id) }
 
     def self.for_product(product, store:)
-      category_ids = product.taxons.joins(:taxonomy).where(spree_taxonomies: { store_id: store.id }).select(:id)
+      category_ids = review_category_ids_for(product, store)
 
       where(store: store, applies_to: 'store')
         .or(where(store: store, applies_to: 'product', product: product))
         .or(where(store: store, applies_to: 'category', category_id: category_ids))
         .active
         .ordered
+    end
+
+    def self.review_category_ids_for(product, store)
+      product.taxons.joins(:taxonomy).
+        where(spree_taxonomies: { store_id: store.id }).
+        flat_map { |taxon| taxon.self_and_ancestors.ids }.
+        uniq
     end
 
     def option_based?

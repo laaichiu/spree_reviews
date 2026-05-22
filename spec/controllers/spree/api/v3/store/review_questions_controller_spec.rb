@@ -30,5 +30,18 @@ RSpec.describe Spree::Api::V3::Store::ReviewQuestionsController, type: :controll
         category_question.prefixed_id
       ])
     end
+
+    it 'returns category questions configured on a parent category' do
+      taxonomy = create(:taxonomy, store: store)
+      parent_taxon = create(:taxon, taxonomy: taxonomy)
+      child_taxon = create(:taxon, taxonomy: taxonomy, parent: parent_taxon)
+      product.taxons << child_taxon
+      category_question = create(:review_question, :for_category, store: store, category: parent_taxon, label: 'Overall Fit')
+
+      get :index, params: { product_id: product.prefixed_id }
+
+      expect(response).to have_http_status(:ok)
+      expect(json_response['data'].map { |question| question['id'] }).to include(category_question.prefixed_id)
+    end
   end
 end

@@ -37,5 +37,15 @@ RSpec.describe Spree::ReviewQuestion, type: :model do
         category_question
       )
     end
+
+    it 'returns category questions configured on an ancestor category' do
+      taxonomy = create(:taxonomy, store: store)
+      parent_taxon = create(:taxon, taxonomy: taxonomy)
+      child_taxon = create(:taxon, taxonomy: taxonomy, parent: parent_taxon)
+      product.taxons << child_taxon
+      ancestor_question = create(:review_question, :for_category, store: store, category: parent_taxon)
+
+      expect(described_class.for_product(product, store: store)).to include(ancestor_question)
+    end
   end
 end
