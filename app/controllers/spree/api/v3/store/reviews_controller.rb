@@ -3,8 +3,9 @@ module Spree
     module V3
       module Store
         class ReviewsController < Store::BaseController
-          before_action :set_product
-          before_action :require_review_login, only: :create
+          include Spree::Api::V3::Store::ReviewProductLookup
+
+          before_action :require_authentication!, only: :create
 
           # GET /api/v3/store/products/:product_id/reviews
           def index
@@ -19,9 +20,13 @@ module Spree
 
           # POST /api/v3/store/products/:product_id/reviews
           def create
+            eligibility = Spree::ReviewEligibility.new(product: @product, store: current_store, user: current_user)
+            return render_review_eligibility_error(eligibility) unless eligibility.can_review?
+
             review = @product.reviews.build(review_params)
             review.store = current_store
-            review.user = current_user if current_user
+            review.user = current_user
+            review.verified_purchase = true
             review.locale ||= current_locale
 
             assign_answers(review)
@@ -35,20 +40,6 @@ module Spree
           end
 
           private
-
-          def set_product
-            @product = product_scope.then do |scope|
-              if params[:product_id].to_s.start_with?('prod_')
-                scope.find_by_prefix_id!(params[:product_id])
-              else
-                scope.i18n.find_by!(slug: params[:product_id])
-              end
-            end
-          end
-
-          def product_scope
-            Spree::Product.for_store(current_store).active(current_currency)
-          end
 
           def filtered_reviews
             reviews = @product.reviews.approved.for_store(current_store).
@@ -247,10 +238,33 @@ module Spree
             ActiveModel::Type::Boolean.new.cast(value)
           end
 
-          def require_review_login
-            return unless SpreeReviews::Config[:require_login]
+          def render_review_eligibility_error(eligibility)
+            case eligibility.reason
+            when Spree::ReviewEligibility::REASON_ALREADY_REVIEWED
+              render_error(
+                code: 'review_already_exists',
+                message: 'You have already reviewed this product.',
+                status: :unprocessable_content,
+                details: review_eligibility_error_details(eligibility)
+              )
+            else
+              render_error(
+                code: 'review_not_allowed',
+                message: 'Only verified buyers can review this product.',
+                status: :forbidden,
+                details: review_eligibility_error_details(eligibility)
+              )
+            end
+          end
 
-            require_authentication!
+          def review_eligibility_error_details(eligibility)
+            {
+              reason: eligibility.reason,
+              product_id: @product.prefixed_id,
+              review_id: eligibility.existing_review&.prefixed_id,
+              verified_purchase: eligibility.verified_purchase?,
+              already_reviewed: eligibility.already_reviewed?
+            }
           end
         end
       end

@@ -31,6 +31,7 @@ module Spree
     validates :product, :store, :title, :body, presence: true
     validates :status, presence: true, inclusion: { in: STATUSES }
     validates :verified_purchase, inclusion: { in: [true, false] }
+    validates :user_id, uniqueness: { scope: [:store_id, :product_id], allow_nil: true }
     validates :rating, numericality: {
       only_integer: true,
       greater_than_or_equal_to: 1,

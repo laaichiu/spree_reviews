@@ -3,7 +3,7 @@ module Spree
     module V3
       module Store
         class ReviewFiltersController < Store::BaseController
-          before_action :set_product
+          include Spree::Api::V3::Store::ReviewProductLookup
 
           # GET /api/v3/store/products/:product_id/reviews/filters
           def index
@@ -116,19 +116,6 @@ module Spree
             @reviews ||= @product.reviews.approved.for_store(current_store)
           end
 
-          def set_product
-            @product = product_scope.then do |scope|
-              if params[:product_id].to_s.start_with?('prod_')
-                scope.find_by_prefix_id!(params[:product_id])
-              else
-                scope.i18n.find_by!(slug: params[:product_id])
-              end
-            end
-          end
-
-          def product_scope
-            Spree::Product.for_store(current_store).active(current_currency)
-          end
         end
       end
     end

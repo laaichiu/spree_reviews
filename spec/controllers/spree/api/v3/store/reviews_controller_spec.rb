@@ -59,6 +59,11 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       )
     end
 
+    before do
+      request.headers['Authorization'] = "Bearer #{jwt_token}"
+      create(:shipped_order, user: user, store: store, variants: [product.master]).update!(shipment_state: 'shipped')
+    end
+
     it 'creates a pending review with answers and images' do
       true_to_size
 
@@ -77,6 +82,8 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       review = Spree::Review.last
       expect(response).to have_http_status(:created)
       expect(review.status).to eq('pending')
+      expect(review.user).to eq(user)
+      expect(review.verified_purchase).to be(true)
       expect(review.answers.first.option).to eq(true_to_size)
       expect(review.review_media.first.attachment).to be_attached
       expect(json_response['media'].first['alt']).to eq('Fit photo')
@@ -95,6 +102,57 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       expect(response).to have_http_status(:unprocessable_content)
       expect(json_response['error']['code']).to eq('validation_error')
       expect(json_response['error']['details']['answers']).to be_present
+    end
+
+    it 'requires authentication' do
+      request.headers['Authorization'] = nil
+
+      expect {
+        post :create, params: {
+          product_id: product.prefixed_id,
+          rating: 5,
+          title: 'Love it',
+          body: 'The fabric is excellent.'
+        }
+      }.not_to change(Spree::Review, :count)
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(json_response['error']['code']).to eq('authentication_required')
+    end
+
+    it 'rejects customers without a shipped purchase for the product' do
+      other_product = create(:product, stores: [store])
+
+      expect {
+        post :create, params: {
+          product_id: other_product.prefixed_id,
+          rating: 5,
+          title: 'Love it',
+          body: 'The fabric is excellent.'
+        }
+      }.not_to change(Spree::Review, :count)
+
+      expect(response).to have_http_status(:forbidden)
+      expect(json_response['error']['code']).to eq('review_not_allowed')
+      expect(json_response['error']['details']['reason']).to eq('not_purchased')
+    end
+
+    it 'rejects duplicate customer reviews for the same product' do
+      existing_review = create(:review, product: product, store: store, user: user)
+
+      expect {
+        post :create, params: {
+          product_id: product.prefixed_id,
+          rating: 4,
+          title: 'Still good',
+          body: 'I still like it.'
+        }
+      }.not_to change(Spree::Review, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json_response['error']['code']).to eq('review_already_exists')
+      expect(json_response['error']['details']['reason']).to eq('already_reviewed')
+      expect(json_response['error']['details']['review_id']).to eq(existing_review.prefixed_id)
     end
   end
 end

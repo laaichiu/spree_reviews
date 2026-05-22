@@ -28,6 +28,16 @@ RSpec.describe Spree::Review, type: :model do
       expect(review).not_to be_valid
       expect(review.errors[:product]).to be_present
     end
+
+    it 'allows one review per customer and product in a store' do
+      user = create(:user)
+      create(:review, product: product, store: store, user: user)
+
+      duplicate = build(:review, product: product, store: store, user: user)
+
+      expect(duplicate).not_to be_valid
+      expect(duplicate.errors[:user_id]).to be_present
+    end
   end
 
   describe '.with_answer' do
