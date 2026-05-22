@@ -97,21 +97,27 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       expect(review.answers.first.option).to eq(true_to_size)
       expect(review.review_media.first.attachment).to be_attached
       expect(json_response['media'].first['alt']).to eq('Fit photo')
-      expect(json_response['order_id']).to eq(review_order.prefixed_id)
+      expect(json_response).not_to have_key('user_id')
+      expect(json_response).not_to have_key('order_id')
+      expect(json_response).not_to have_key('reviewer_name')
     end
 
-    it 'defaults the reviewer name from the eligible order shipping address' do
+    it 'stores a privacy-formatted reviewer name from the customer profile' do
+      user.update!(first_name: 'Jacqueline', last_name: 'Brown')
+
       post :create, params: {
         product_id: product.prefixed_id,
         variant_id: review_variant.prefixed_id,
         order_id: review_order.prefixed_id,
         rating: 5,
         title: 'Love it',
-        body: 'The fabric is excellent and the fit is right.'
+        body: 'The fabric is excellent and the fit is right.',
+        reviewer_name: 'Leaked Full Name'
       }
 
       expect(response).to have_http_status(:created)
-      expect(Spree::Review.last.reviewer_name).to be_present
+      expect(Spree::Review.last.reviewer_name).to eq('Jacqueline B.')
+      expect(json_response['reviewer_display_name']).to eq('Jacqueline B.')
     end
 
     it 'allows the same customer to review a different purchased variant of the same product' do
@@ -205,7 +211,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       expect(json_response['error']['details']['reason']).to eq('not_purchased')
     end
 
-    it 'rejects duplicate customer reviews for the same product' do
+    it 'rejects duplicate customer reviews for the same order product variant' do
       existing_review = create(:review, product: product, order: review_order, store: store, user: user)
 
       expect {

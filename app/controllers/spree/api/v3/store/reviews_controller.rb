@@ -36,7 +36,7 @@ module Spree
             review.order = eligibility.eligible_order
             review.verified_purchase = true
             review.locale ||= current_locale
-            review.reviewer_name = reviewer_name_from_order(eligibility.eligible_order) if review.reviewer_name.blank?
+            review.reviewer_name = reviewer_name_snapshot(current_user)
 
             assign_answers(review)
             assign_media(review)
@@ -86,7 +86,7 @@ module Spree
           end
 
           def review_params
-            params.permit(:rating, :title, :body, :reviewer_name, :locale, metadata: {}).to_h
+            params.permit(:rating, :title, :body, :locale, metadata: {}).to_h
           end
 
           def assign_answers(review)
@@ -210,6 +210,10 @@ module Spree
             Spree::Api::V3::ReviewSerializer
           end
 
+          def serializer_params
+            super.merge(ip_address: request.remote_ip)
+          end
+
           def collection_meta
             {
               page: @pagy.page,
@@ -278,15 +282,21 @@ module Spree
             }
           end
 
-          def reviewer_name_from_order(order)
-            address = order&.ship_address
-            return if address.blank?
-            return address.name if address.respond_to?(:name) && address.name.present?
+          def reviewer_name_snapshot(user)
+            return if user.blank?
 
-            [
-              address.try(:firstname) || address.try(:first_name),
-              address.try(:lastname) || address.try(:last_name)
-            ].compact_blank.join(' ').presence
+            first_name = user.try(:firstname).presence || user.try(:first_name).presence
+            last_name = user.try(:lastname).presence || user.try(:last_name).presence
+            if first_name.present? || last_name.present?
+              return Spree::Review.public_reviewer_name_from_parts(
+                first_name,
+                last_name
+              )
+            end
+
+            if user.respond_to?(:name) && user.name.present?
+              Spree::Review.public_reviewer_name(user.name)
+            end
           end
         end
       end

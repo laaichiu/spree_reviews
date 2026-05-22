@@ -7,15 +7,23 @@ module Spree
 
           # POST /api/v3/store/reviews/:review_id/helpful_votes
           def create
-            vote = existing_vote || @review.votes.build
-            vote.assign_attributes(vote_params)
-            vote.user = current_user if current_user
-            vote.ip_address ||= request.remote_ip if current_user.blank?
+            vote = existing_vote
+            selected_vote = vote_params[:vote]
 
-            if vote.save
-              render json: Spree::Api::V3::ReviewSerializer.new(@review.reload, params: serializer_params).to_h, status: :created
+            if vote&.vote == selected_vote
+              vote.destroy!
+              render_review(status: :ok)
             else
-              render_validation_error(vote.errors)
+              vote ||= @review.votes.build
+              vote.assign_attributes(vote: selected_vote)
+              vote.user = current_user if current_user
+              vote.ip_address = request.remote_ip if current_user.blank?
+
+              if vote.save
+                render_review(status: vote.previous_changes.key?('id') ? :created : :ok)
+              else
+                render_validation_error(vote.errors)
+              end
             end
           end
 
@@ -35,6 +43,14 @@ module Spree
             return @review.votes.find_by(user: current_user) if current_user
 
             @review.votes.find_by(ip_address: request.remote_ip)
+          end
+
+          def render_review(status:)
+            render json: Spree::Api::V3::ReviewSerializer.new(@review.reload, params: serializer_params).to_h, status: status
+          end
+
+          def serializer_params
+            super.merge(ip_address: request.remote_ip)
           end
         end
       end

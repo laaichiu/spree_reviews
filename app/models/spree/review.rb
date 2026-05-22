@@ -16,7 +16,7 @@ module Spree
       reviewer_name title body locale helpful_count not_helpful_count
       created_at updated_at
     ]
-    self.whitelisted_ransackable_associations = %w[product variant order store user answers review_media]
+    self.whitelisted_ransackable_associations = %w[product variant order store user answers review_media votes]
 
     belongs_to :product, class_name: 'Spree::Product', inverse_of: :reviews, touch: true
     belongs_to :variant, class_name: 'Spree::Variant', optional: true
@@ -122,8 +122,41 @@ module Spree
       update!(status: 'rejected')
     end
 
+    def self.public_reviewer_name(name)
+      normalized_name = name.to_s.squish
+      return if normalized_name.blank?
+
+      name_parts = normalized_name.split(/\s+/)
+      public_reviewer_name_from_parts(
+        name_parts.first,
+        name_parts.length > 1 ? name_parts.last : nil
+      )
+    end
+
+    def self.public_reviewer_name_from_parts(first_name, last_name = nil)
+      normalized_first_name = first_name.to_s.squish.presence
+      normalized_last_name = last_name.to_s.squish.presence
+      return if normalized_first_name.blank? && normalized_last_name.blank?
+
+      first_name = normalized_first_name
+      first_name ||= "#{normalized_last_name.first.upcase}." if normalized_last_name.present?
+      last_initial = if normalized_first_name.present? && normalized_last_name.present?
+                       normalized_last_name.first&.upcase
+                     end
+
+      [first_name, last_initial.present? ? "#{last_initial}." : nil].compact.join(' ')
+    end
+
     def reviewer_display_name
-      reviewer_name.presence || user_display_name || Spree.t(:anonymous)
+      self.class.public_reviewer_name(reviewer_name.presence || user_display_name) || Spree.t(:anonymous)
+    end
+
+    def current_vote_for(user: nil, ip_address: nil)
+      if user.present?
+        votes.find_by(user: user)&.vote
+      elsif ip_address.present?
+        votes.find_by(ip_address: ip_address)&.vote
+      end
     end
 
     def recalculate_vote_counts!

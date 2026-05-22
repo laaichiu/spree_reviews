@@ -50,6 +50,9 @@ RSpec.describe Spree::Api::V3::Admin::ReviewsController, type: :controller do
       expect(json_response['metadata']).to eq('moderation' => 'queued')
       expect(json_response['private_metadata']).to eq('moderation' => 'queued')
       expect(json_response['product_id']).to eq(product.prefixed_id)
+      expect(json_response).to have_key('user_id')
+      expect(json_response).to have_key('order_id')
+      expect(json_response).to have_key('reviewer_name')
     end
   end
 

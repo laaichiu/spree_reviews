@@ -15,6 +15,21 @@ RSpec.describe Spree::Review, type: :model do
     end
   end
 
+  describe '#reviewer_display_name' do
+    it 'formats full reviewer names as a first name and last initial' do
+      review = build(:review, product: product, store: store, reviewer_name: 'Jacqueline Brown')
+
+      expect(review.reviewer_display_name).to eq('Jacqueline B.')
+    end
+
+    it 'formats profile name parts without exposing a lone last name' do
+      expect(described_class.public_reviewer_name_from_parts('Jacqueline', 'Brown')).
+        to eq('Jacqueline B.')
+      expect(described_class.public_reviewer_name_from_parts('Jacqueline', nil)).to eq('Jacqueline')
+      expect(described_class.public_reviewer_name_from_parts(nil, 'Brown')).to eq('B.')
+    end
+  end
+
   describe 'validations' do
     it 'accepts ratings from one to five' do
       expect(build(:review, product: product, store: store, rating: 5)).to be_valid
