@@ -35,6 +35,19 @@ RSpec.describe Spree::Admin::ReviewQuestionsController, type: :controller do
       expect(response.body).to include('Everyday Tee')
       expect(response.body).to include('Answer options')
     end
+
+    it 'renders category options with hierarchy and descendant product counts' do
+      taxonomy = create(:taxonomy, store: store)
+      parent_taxon = create(:taxon, taxonomy: taxonomy, name: 'Clothing')
+      child_taxon = create(:taxon, taxonomy: taxonomy, parent: parent_taxon, name: 'Dresses')
+      product.taxons << child_taxon
+
+      get :new
+
+      expect(response).to be_successful
+      expect(response.body).to include('Clothing &gt; Dresses (1 product)')
+      expect(response.body).to include('Category-scoped questions apply to the selected category and all descendant categories.')
+    end
   end
 
   describe 'POST #create' do
@@ -80,6 +93,20 @@ RSpec.describe Spree::Admin::ReviewQuestionsController, type: :controller do
       expect(response.body).to include('Body type')
       expect(response.body).to include('curvy_on_top')
       expect(response.body).to include('Curvy on top')
+    end
+
+    it 'previews matched products for the selected category and descendants' do
+      taxonomy = create(:taxonomy, store: store)
+      parent_taxon = create(:taxon, taxonomy: taxonomy, name: 'Clothing')
+      child_taxon = create(:taxon, taxonomy: taxonomy, parent: parent_taxon, name: 'Dresses')
+      product.taxons << child_taxon
+      question = create(:review_question, :for_category, store: store, category: parent_taxon, label: 'Overall fit')
+
+      get :edit, params: { id: question.to_param }
+
+      expect(response).to be_successful
+      expect(response.body).to include('Current category matches 1 product')
+      expect(response.body).to include('including products in descendant categories')
     end
   end
 

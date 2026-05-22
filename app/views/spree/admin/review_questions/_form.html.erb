@@ -20,7 +20,15 @@
         <%= f.spree_select :product_id, @products.map { |product| [product.name, product.id] }, { include_blank: 'All products', label: 'Product' } %>
       </div>
       <div class="col-span-12 md:col-span-6">
-        <%= f.spree_select :category_id, @categories.map { |category| [category.pretty_name.presence || category.name, category.id] }, { include_blank: 'All categories', label: 'Category' } %>
+        <%= f.spree_select :category_id, @category_options, { include_blank: 'Select a category', label: 'Category' } %>
+        <p class="mt-2 text-sm text-gray-500">
+          Select a parent or child category. Category-scoped questions apply to the selected category and all descendant categories.
+        </p>
+        <% if f.object.category.present? %>
+          <p class="mt-1 text-sm text-gray-500">
+            Current category matches <%= pluralize(@category_product_counts.fetch(f.object.category_id, 0), 'product') %>, including products in descendant categories.
+          </p>
+        <% end %>
       </div>
       <div class="col-span-12 md:col-span-4">
         <%= f.spree_number_field :position, min: 0 %>
