@@ -36,6 +36,7 @@ module Spree
           def scope_includes
             [
               :product,
+              :variant,
               :store,
               :user,
               review_media: { attachment_attachment: :blob },

@@ -4,12 +4,13 @@ module Spree
     REASON_NOT_PURCHASED = 'not_purchased'.freeze
     REASON_ALREADY_REVIEWED = 'already_reviewed'.freeze
 
-    attr_reader :product, :store, :user
+    attr_reader :product, :store, :user, :variant
 
-    def initialize(product:, store:, user:)
+    def initialize(product:, store:, user:, variant: nil)
       @product = product
       @store = store
       @user = user
+      @variant = variant
     end
 
     def can_review?
@@ -34,7 +35,12 @@ module Spree
       return if user.blank?
       return @existing_review if defined?(@existing_review)
 
-      @existing_review = Spree::Review.for_store(store).for_product(product).find_by(user_id: user.id)
+      reviews = Spree::Review.for_store(store).for_product(product).where(user_id: user.id)
+      @existing_review = if variant.present?
+                           reviews.find_by(variant: variant)
+                         else
+                           reviews.find_by(variant_id: nil)
+                         end
     end
 
     def eligible_order
@@ -54,9 +60,17 @@ module Spree
       Spree::Order.complete.shipped.not_canceled.
         where(user_id: user.id, store_id: store.id).
         joins(line_items: :variant).
-        where(Spree::Variant.table_name => { product_id: product.id }).
+        merge(eligible_variant_scope).
         distinct.
         order(completed_at: :desc, id: :desc)
+    end
+
+    def eligible_variant_scope
+      if variant.present?
+        Spree::Variant.where(id: variant.id)
+      else
+        Spree::Variant.where(product_id: product.id)
+      end
     end
   end
 end

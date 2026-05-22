@@ -7,7 +7,8 @@ module Spree
 
           # POST /api/v3/store/reviews/:review_id/helpful_votes
           def create
-            vote = @review.votes.build(vote_params)
+            vote = existing_vote || @review.votes.build
+            vote.assign_attributes(vote_params)
             vote.user = current_user if current_user
             vote.ip_address ||= request.remote_ip if current_user.blank?
 
@@ -28,6 +29,12 @@ module Spree
             permitted = params.permit(:vote).to_h
             permitted[:vote] = 'helpful' if permitted[:vote].blank?
             permitted
+          end
+
+          def existing_vote
+            return @review.votes.find_by(user: current_user) if current_user
+
+            @review.votes.find_by(ip_address: request.remote_ip)
           end
         end
       end

@@ -12,12 +12,14 @@ module Spree
     attribute :not_helpful_count, :integer, default: 0
 
     self.whitelisted_ransackable_attributes = %w[
-      product_id store_id user_id rating status verified_purchase reviewer_name
-      title body locale helpful_count not_helpful_count created_at updated_at
+      product_id variant_id store_id user_id rating status verified_purchase
+      reviewer_name title body locale helpful_count not_helpful_count
+      created_at updated_at
     ]
-    self.whitelisted_ransackable_associations = %w[product store user answers review_media]
+    self.whitelisted_ransackable_associations = %w[product variant store user answers review_media]
 
     belongs_to :product, class_name: 'Spree::Product', inverse_of: :reviews, touch: true
+    belongs_to :variant, class_name: 'Spree::Variant', optional: true
     belongs_to :store, class_name: 'Spree::Store'
     belongs_to :user, class_name: Spree.user_class.to_s, optional: true
 
@@ -31,13 +33,14 @@ module Spree
     validates :product, :store, :title, :body, presence: true
     validates :status, presence: true, inclusion: { in: STATUSES }
     validates :verified_purchase, inclusion: { in: [true, false] }
-    validates :user_id, uniqueness: { scope: [:store_id, :product_id], allow_nil: true }
+    validates :user_id, uniqueness: { scope: [:store_id, :product_id, :variant_id], allow_nil: true }
     validates :rating, numericality: {
       only_integer: true,
       greater_than_or_equal_to: 1,
       less_than_or_equal_to: 5
     }
     validate :product_belongs_to_store
+    validate :variant_belongs_to_product
     validate :review_media_count_within_limit
 
     scope :approved, -> { where(status: 'approved') }
@@ -145,6 +148,13 @@ module Spree
       return if product.stores.exists?(id: store.id)
 
       errors.add(:product, :invalid)
+    end
+
+    def variant_belongs_to_product
+      return if variant.blank? || product.blank?
+      return if variant.product_id == product.id
+
+      errors.add(:variant, :invalid)
     end
 
     def review_media_count_within_limit

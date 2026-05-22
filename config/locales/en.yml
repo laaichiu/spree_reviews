@@ -1,5 +1,37 @@
 ---
 en:
+  activerecord:
+    attributes:
+      spree/review:
+        body: Body
+        helpful_count: Helpful count
+        locale: Locale
+        not_helpful_count: Not helpful count
+        product: Product
+        rating: Rating
+        reviewer_name: Reviewer name
+        status: Status
+        title: Title
+        user: Customer
+        variant: Variant
+        verified_purchase: Verified purchase
+      spree/review_question:
+        active: Active
+        applies_to: Applies to
+        category: Category
+        filterable: Filterable
+        key: Key
+        kind: Kind
+        label: Label
+        position: Position
+        product: Product
+        required: Required
+        store: Store
+      spree/review_question_option:
+        active: Active
+        label: Label
+        position: Position
+        value: Value
   spree:
     reviews:
       hello: Hello SpreeReviews

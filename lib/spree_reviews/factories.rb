@@ -22,6 +22,10 @@ FactoryBot.define do
     trait :verified_purchase do
       verified_purchase { true }
     end
+
+    trait :for_variant do
+      variant { product.master }
+    end
   end
 
   factory :review_media, class: Spree::ReviewMedia do
@@ -138,5 +142,9 @@ FactoryBot.define do
       user
       ip_address { nil }
     end
+  end
+
+  factory :reviewable_variant, parent: :on_demand_variant do
+    product { association(:product, stores: [Spree::Store.default]) }
   end
 end

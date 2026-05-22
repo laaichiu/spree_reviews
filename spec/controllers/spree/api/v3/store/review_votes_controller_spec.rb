@@ -21,5 +21,17 @@ RSpec.describe Spree::Api::V3::Store::ReviewVotesController, type: :controller d
       expect(response).to have_http_status(:created)
       expect(json_response['helpful_count']).to eq(1)
     end
+
+    it 'updates an existing actor vote instead of creating a duplicate' do
+      post :create, params: { review_id: review.prefixed_id, vote: 'helpful' }
+
+      expect {
+        post :create, params: { review_id: review.prefixed_id, vote: 'not_helpful' }
+      }.not_to change(Spree::ReviewVote, :count)
+
+      expect(response).to have_http_status(:created)
+      expect(json_response['helpful_count']).to eq(0)
+      expect(json_response['not_helpful_count']).to eq(1)
+    end
   end
 end

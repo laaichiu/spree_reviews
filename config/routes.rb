@@ -31,6 +31,7 @@ Spree::Core::Engine.add_routes do
             collection do
               get :summary, to: 'review_summaries#show'
               get :filters, to: 'review_filters#index'
+              get :questions, to: 'review_questions#index'
               get :eligibility, to: 'review_eligibilities#show'
             end
           end

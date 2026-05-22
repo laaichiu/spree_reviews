@@ -40,4 +40,28 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
     expect(eligibility.reason).to eq('already_reviewed')
     expect(eligibility.existing_review).to eq(review)
   end
+
+  it 'allows separate reviews for different purchased variants of the same product' do
+    variant = product.master
+    other_variant = create(:reviewable_variant, product: product)
+    create(:shipped_order, user: user, store: store, variants: [other_variant]).update!(shipment_state: 'shipped')
+    create(:review, :for_variant, product: product, variant: variant, store: store, user: user)
+
+    eligibility = described_class.new(product: product, store: store, user: user, variant: other_variant)
+
+    expect(eligibility).to be_can_review
+    expect(eligibility.existing_review).to be_nil
+  end
+
+  it 'does not allow duplicate reviews for the same purchased variant' do
+    variant = product.master
+    create(:shipped_order, user: user, store: store, variants: [variant]).update!(shipment_state: 'shipped')
+    review = create(:review, :for_variant, product: product, variant: variant, store: store, user: user)
+
+    eligibility = described_class.new(product: product, store: store, user: user, variant: variant)
+
+    expect(eligibility).not_to be_can_review
+    expect(eligibility.reason).to eq('already_reviewed')
+    expect(eligibility.existing_review).to eq(review)
+  end
 end

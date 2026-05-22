@@ -29,14 +29,26 @@ RSpec.describe Spree::Review, type: :model do
       expect(review.errors[:product]).to be_present
     end
 
-    it 'allows one review per customer and product in a store' do
+    it 'allows one review per customer and product variant in a store' do
       user = create(:user)
-      create(:review, product: product, store: store, user: user)
+      variant = product.master
+      other_variant = create(:reviewable_variant, product: product)
+      create(:review, :for_variant, product: product, variant: variant, store: store, user: user)
 
-      duplicate = build(:review, product: product, store: store, user: user)
+      duplicate = build(:review, :for_variant, product: product, variant: variant, store: store, user: user)
+      other_variant_review = build(:review, :for_variant, product: product, variant: other_variant, store: store, user: user)
 
       expect(duplicate).not_to be_valid
       expect(duplicate.errors[:user_id]).to be_present
+      expect(other_variant_review).to be_valid
+    end
+
+    it 'requires the variant to belong to the reviewed product' do
+      other_product = create(:product, stores: [store])
+      review = build(:review, product: product, variant: other_product.master, store: store)
+
+      expect(review).not_to be_valid
+      expect(review.errors[:variant]).to be_present
     end
   end
 

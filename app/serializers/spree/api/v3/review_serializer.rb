@@ -3,6 +3,7 @@ module Spree
     module V3
       class ReviewSerializer < BaseSerializer
         typelize product_id: :string,
+                 variant_id: [:string, nullable: true],
                  rating: :number,
                  title: :string,
                  body: :string,
@@ -23,6 +24,10 @@ module Spree
 
         attribute :product_id do |review|
           review.product.prefixed_id
+        end
+
+        attribute :variant_id do |review|
+          review.variant&.prefixed_id
         end
 
         attribute :reviewer_display_name do |review|

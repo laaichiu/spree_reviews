@@ -20,14 +20,21 @@ module Spree
 
           # POST /api/v3/store/products/:product_id/reviews
           def create
-            eligibility = Spree::ReviewEligibility.new(product: @product, store: current_store, user: current_user)
+            eligibility = Spree::ReviewEligibility.new(
+              product: @product,
+              store: current_store,
+              user: current_user,
+              variant: review_variant
+            )
             return render_review_eligibility_error(eligibility) unless eligibility.can_review?
 
             review = @product.reviews.build(review_params)
             review.store = current_store
             review.user = current_user
+            review.variant = review_variant
             review.verified_purchase = true
             review.locale ||= current_locale
+            review.reviewer_name = reviewer_name_from_order(eligibility.eligible_order) if review.reviewer_name.blank?
 
             assign_answers(review)
             assign_media(review)
@@ -78,6 +85,23 @@ module Spree
 
           def review_params
             params.permit(:rating, :title, :body, :reviewer_name, :locale, metadata: {}).to_h
+          end
+
+          def review_variant
+            return @review_variant if defined?(@review_variant)
+
+            variant_id = params[:variant_id].presence
+            @review_variant = variant_id.present? ? find_product_variant!(variant_id) : nil
+          end
+
+          def find_product_variant!(variant_id)
+            scope = Spree::Variant.where(product_id: @product.id)
+
+            if Spree::PrefixedId.prefixed_id?(variant_id)
+              scope.find_by_prefix_id!(variant_id)
+            else
+              scope.find(variant_id)
+            end
           end
 
           def assign_answers(review)
@@ -261,10 +285,22 @@ module Spree
             {
               reason: eligibility.reason,
               product_id: @product.prefixed_id,
+              variant_id: eligibility.variant&.prefixed_id,
               review_id: eligibility.existing_review&.prefixed_id,
               verified_purchase: eligibility.verified_purchase?,
               already_reviewed: eligibility.already_reviewed?
             }
+          end
+
+          def reviewer_name_from_order(order)
+            address = order&.ship_address
+            return if address.blank?
+            return address.name if address.respond_to?(:name) && address.name.present?
+
+            [
+              address.try(:firstname) || address.try(:first_name),
+              address.try(:lastname) || address.try(:last_name)
+            ].compact_blank.join(' ').presence
           end
         end
       end

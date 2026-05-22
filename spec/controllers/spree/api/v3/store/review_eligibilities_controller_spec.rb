@@ -61,5 +61,19 @@ RSpec.describe Spree::Api::V3::Store::ReviewEligibilitiesController, type: :cont
       expect(json_response['already_reviewed']).to be(true)
       expect(json_response['review_id']).to eq(review.prefixed_id)
     end
+
+    it 'checks eligibility for the requested variant' do
+      request.headers['Authorization'] = "Bearer #{jwt_token}"
+      variant = product.master
+      other_variant = create(:reviewable_variant, product: product)
+      create(:shipped_order, user: user, store: store, variants: [other_variant]).update!(shipment_state: 'shipped')
+      create(:review, :for_variant, product: product, variant: variant, store: store, user: user)
+
+      get :show, params: { product_id: product.prefixed_id, variant_id: other_variant.prefixed_id }
+
+      expect(response).to have_http_status(:ok)
+      expect(json_response['can_review']).to be(true)
+      expect(json_response['variant_id']).to eq(other_variant.prefixed_id)
+    end
   end
 end
