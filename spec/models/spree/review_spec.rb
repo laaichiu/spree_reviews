@@ -29,18 +29,22 @@ RSpec.describe Spree::Review, type: :model do
       expect(review.errors[:product]).to be_present
     end
 
-    it 'allows one review per customer and product variant in a store' do
+    it 'allows one review per customer, order, and product variant in a store' do
       user = create(:user)
-      variant = product.master
+      variant = create(:reviewable_variant, product: product)
       other_variant = create(:reviewable_variant, product: product)
-      create(:review, :for_variant, product: product, variant: variant, store: store, user: user)
+      order = create(:shipped_order, user: user, store: store, variants: [variant, other_variant])
+      repeat_order = create(:shipped_order, user: user, store: store, variants: [variant])
+      create(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
 
-      duplicate = build(:review, :for_variant, product: product, variant: variant, store: store, user: user)
-      other_variant_review = build(:review, :for_variant, product: product, variant: other_variant, store: store, user: user)
+      duplicate = build(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
+      other_variant_review = build(:review, :for_variant, product: product, variant: other_variant, order: order, store: store, user: user)
+      repeat_order_review = build(:review, :for_variant, product: product, variant: variant, order: repeat_order, store: store, user: user)
 
       expect(duplicate).not_to be_valid
       expect(duplicate.errors[:user_id]).to be_present
       expect(other_variant_review).to be_valid
+      expect(repeat_order_review).to be_valid
     end
 
     it 'requires the variant to belong to the reviewed product' do
@@ -49,6 +53,18 @@ RSpec.describe Spree::Review, type: :model do
 
       expect(review).not_to be_valid
       expect(review.errors[:variant]).to be_present
+    end
+
+    it 'requires the order to contain the reviewed variant' do
+      user = create(:user)
+      variant = create(:reviewable_variant, product: product)
+      other_variant = create(:reviewable_variant, product: product)
+      order = create(:shipped_order, user: user, store: store, variants: [other_variant])
+
+      review = build(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
+
+      expect(review).not_to be_valid
+      expect(review.errors[:order]).to be_present
     end
   end
 

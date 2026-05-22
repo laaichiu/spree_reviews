@@ -26,7 +26,7 @@ module Spree
       protected
 
       def collection_includes
-        [:product, :variant, :store, :user, :answers, review_media: { attachment_attachment: :blob }]
+        [:product, :variant, :order, :store, :user, :answers, review_media: { attachment_attachment: :blob }]
       end
 
       def collection_default_sort

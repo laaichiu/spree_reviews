@@ -24,7 +24,8 @@ module Spree
               product: @product,
               store: current_store,
               user: current_user,
-              variant: review_variant
+              variant: review_variant,
+              order: review_order
             )
             return render_review_eligibility_error(eligibility) unless eligibility.can_review?
 
@@ -32,6 +33,7 @@ module Spree
             review.store = current_store
             review.user = current_user
             review.variant = review_variant
+            review.order = eligibility.eligible_order
             review.verified_purchase = true
             review.locale ||= current_locale
             review.reviewer_name = reviewer_name_from_order(eligibility.eligible_order) if review.reviewer_name.blank?
@@ -85,23 +87,6 @@ module Spree
 
           def review_params
             params.permit(:rating, :title, :body, :reviewer_name, :locale, metadata: {}).to_h
-          end
-
-          def review_variant
-            return @review_variant if defined?(@review_variant)
-
-            variant_id = params[:variant_id].presence
-            @review_variant = variant_id.present? ? find_product_variant!(variant_id) : nil
-          end
-
-          def find_product_variant!(variant_id)
-            scope = Spree::Variant.where(product_id: @product.id)
-
-            if Spree::PrefixedId.prefixed_id?(variant_id)
-              scope.find_by_prefix_id!(variant_id)
-            else
-              scope.find(variant_id)
-            end
           end
 
           def assign_answers(review)
@@ -267,7 +252,7 @@ module Spree
             when Spree::ReviewEligibility::REASON_ALREADY_REVIEWED
               render_error(
                 code: 'review_already_exists',
-                message: 'You have already reviewed this product.',
+                message: 'You have already reviewed this purchase.',
                 status: :unprocessable_content,
                 details: review_eligibility_error_details(eligibility)
               )
@@ -286,6 +271,7 @@ module Spree
               reason: eligibility.reason,
               product_id: @product.prefixed_id,
               variant_id: eligibility.variant&.prefixed_id,
+              order_id: (eligibility.eligible_order || eligibility.order)&.prefixed_id,
               review_id: eligibility.existing_review&.prefixed_id,
               verified_purchase: eligibility.verified_purchase?,
               already_reviewed: eligibility.already_reviewed?

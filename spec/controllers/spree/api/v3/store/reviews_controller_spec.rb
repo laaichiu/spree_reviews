@@ -51,6 +51,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
   describe 'POST #create' do
     let(:fit_question) { create(:review_question, store: store, key: 'overall_fit', required: true) }
     let(:true_to_size) { create(:review_question_option, question: fit_question, value: 'true_to_size', label: 'True to size') }
+    let(:review_variant) { create(:reviewable_variant, product: product) }
     let(:blob) do
       ActiveStorage::Blob.create_and_upload!(
         io: StringIO.new('review image'),
@@ -61,7 +62,12 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
 
     before do
       request.headers['Authorization'] = "Bearer #{jwt_token}"
-      create(:shipped_order, user: user, store: store, variants: [product.master]).update!(shipment_state: 'shipped')
+    end
+
+    let!(:review_order) do
+      create(:shipped_order, user: user, store: store, variants: [review_variant]).tap do |order|
+        order.update!(shipment_state: 'shipped')
+      end
     end
 
     it 'creates a pending review with answers and images' do
@@ -70,7 +76,8 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       expect {
         post :create, params: {
           product_id: product.prefixed_id,
-          variant_id: product.master.prefixed_id,
+          variant_id: review_variant.prefixed_id,
+          order_id: review_order.prefixed_id,
           rating: 5,
           title: 'Love it',
           body: 'The fabric is excellent and the fit is right.',
@@ -84,17 +91,20 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       expect(response).to have_http_status(:created)
       expect(review.status).to eq('pending')
       expect(review.user).to eq(user)
-      expect(review.variant).to eq(product.master)
+      expect(review.variant).to eq(review_variant)
+      expect(review.order).to eq(review_order)
       expect(review.verified_purchase).to be(true)
       expect(review.answers.first.option).to eq(true_to_size)
       expect(review.review_media.first.attachment).to be_attached
       expect(json_response['media'].first['alt']).to eq('Fit photo')
+      expect(json_response['order_id']).to eq(review_order.prefixed_id)
     end
 
     it 'defaults the reviewer name from the eligible order shipping address' do
       post :create, params: {
         product_id: product.prefixed_id,
-        variant_id: product.master.prefixed_id,
+        variant_id: review_variant.prefixed_id,
+        order_id: review_order.prefixed_id,
         rating: 5,
         title: 'Love it',
         body: 'The fabric is excellent and the fit is right.'
@@ -106,13 +116,15 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
 
     it 'allows the same customer to review a different purchased variant of the same product' do
       other_variant = create(:reviewable_variant, product: product)
-      create(:shipped_order, user: user, store: store, variants: [other_variant]).update!(shipment_state: 'shipped')
-      create(:review, :for_variant, product: product, variant: product.master, store: store, user: user)
+      other_order = create(:shipped_order, user: user, store: store, variants: [other_variant])
+      other_order.update!(shipment_state: 'shipped')
+      create(:review, :for_variant, product: product, variant: review_variant, order: review_order, store: store, user: user)
 
       expect {
         post :create, params: {
           product_id: product.prefixed_id,
           variant_id: other_variant.prefixed_id,
+          order_id: other_order.prefixed_id,
           rating: 4,
           title: 'Different size',
           body: 'This size also worked.'
@@ -121,6 +133,27 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
 
       expect(response).to have_http_status(:created)
       expect(Spree::Review.last.variant).to eq(other_variant)
+      expect(Spree::Review.last.order).to eq(other_order)
+    end
+
+    it 'allows the same customer to review the same variant from a different shipped order' do
+      later_order = create(:shipped_order, user: user, store: store, variants: [review_variant])
+      later_order.update!(shipment_state: 'shipped')
+      create(:review, :for_variant, product: product, variant: review_variant, order: review_order, store: store, user: user)
+
+      expect {
+        post :create, params: {
+          product_id: product.prefixed_id,
+          variant_id: review_variant.prefixed_id,
+          order_id: later_order.prefixed_id,
+          rating: 4,
+          title: 'Second order',
+          body: 'Still a good fit on the reorder.'
+        }
+      }.to change(Spree::Review, :count).by(1)
+
+      expect(response).to have_http_status(:created)
+      expect(Spree::Review.last.order).to eq(later_order)
     end
 
     it 'returns validation errors for missing required answers' do
@@ -128,6 +161,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
 
       post :create, params: {
         product_id: product.prefixed_id,
+        order_id: review_order.prefixed_id,
         rating: 5,
         title: 'Love it',
         body: 'The fabric is excellent.'
@@ -172,11 +206,12 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
     end
 
     it 'rejects duplicate customer reviews for the same product' do
-      existing_review = create(:review, product: product, store: store, user: user)
+      existing_review = create(:review, product: product, order: review_order, store: store, user: user)
 
       expect {
         post :create, params: {
           product_id: product.prefixed_id,
+          order_id: review_order.prefixed_id,
           rating: 4,
           title: 'Still good',
           body: 'I still like it.'
@@ -186,6 +221,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       expect(response).to have_http_status(:unprocessable_content)
       expect(json_response['error']['code']).to eq('review_already_exists')
       expect(json_response['error']['details']['reason']).to eq('already_reviewed')
+      expect(json_response['error']['details']['order_id']).to eq(review_order.prefixed_id)
       expect(json_response['error']['details']['review_id']).to eq(existing_review.prefixed_id)
     end
   end

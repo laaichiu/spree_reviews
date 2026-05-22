@@ -33,8 +33,9 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
   end
 
   it 'does not allow duplicate reviews by the same customer for the product' do
-    create(:shipped_order, user: user, store: store, variants: [product.master]).update!(shipment_state: 'shipped')
-    review = create(:review, product: product, store: store, user: user)
+    order = create(:shipped_order, user: user, store: store, variants: [product.master])
+    order.update!(shipment_state: 'shipped')
+    review = create(:review, product: product, order: order, store: store, user: user)
 
     expect(eligibility).not_to be_can_review
     expect(eligibility.reason).to eq('already_reviewed')
@@ -42,26 +43,58 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
   end
 
   it 'allows separate reviews for different purchased variants of the same product' do
-    variant = product.master
+    variant = create(:reviewable_variant, product: product)
     other_variant = create(:reviewable_variant, product: product)
-    create(:shipped_order, user: user, store: store, variants: [other_variant]).update!(shipment_state: 'shipped')
-    create(:review, :for_variant, product: product, variant: variant, store: store, user: user)
+    order = create(:shipped_order, user: user, store: store, variants: [other_variant])
+    reviewed_order = create(:shipped_order, user: user, store: store, variants: [variant])
+    order.update!(shipment_state: 'shipped')
+    reviewed_order.update!(shipment_state: 'shipped')
+    create(:review, :for_variant, product: product, variant: variant, order: reviewed_order, store: store, user: user)
 
-    eligibility = described_class.new(product: product, store: store, user: user, variant: other_variant)
+    eligibility = described_class.new(product: product, store: store, user: user, variant: other_variant, order: order)
 
     expect(eligibility).to be_can_review
     expect(eligibility.existing_review).to be_nil
   end
 
   it 'does not allow duplicate reviews for the same purchased variant' do
-    variant = product.master
-    create(:shipped_order, user: user, store: store, variants: [variant]).update!(shipment_state: 'shipped')
-    review = create(:review, :for_variant, product: product, variant: variant, store: store, user: user)
+    variant = create(:reviewable_variant, product: product)
+    order = create(:shipped_order, user: user, store: store, variants: [variant])
+    order.update!(shipment_state: 'shipped')
+    review = create(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
 
-    eligibility = described_class.new(product: product, store: store, user: user, variant: variant)
+    eligibility = described_class.new(product: product, store: store, user: user, variant: variant, order: order)
 
     expect(eligibility).not_to be_can_review
     expect(eligibility.reason).to eq('already_reviewed')
     expect(eligibility.existing_review).to eq(review)
+  end
+
+  it 'allows the same purchased variant to be reviewed again from a later shipped order' do
+    variant = create(:reviewable_variant, product: product)
+    first_order = create(:shipped_order, user: user, store: store, variants: [variant])
+    second_order = create(:shipped_order, user: user, store: store, variants: [variant])
+    first_order.update!(shipment_state: 'shipped')
+    second_order.update!(shipment_state: 'shipped')
+    create(:review, :for_variant, product: product, variant: variant, order: first_order, store: store, user: user)
+
+    eligibility = described_class.new(product: product, store: store, user: user, variant: variant, order: second_order)
+
+    expect(eligibility).to be_can_review
+    expect(eligibility.eligible_order).to eq(second_order)
+    expect(eligibility.existing_review).to be_nil
+  end
+
+  it 'rejects a requested order that does not contain the requested variant' do
+    variant = create(:reviewable_variant, product: product)
+    other_variant = create(:reviewable_variant, product: product)
+    order = create(:shipped_order, user: user, store: store, variants: [other_variant])
+    order.update!(shipment_state: 'shipped')
+
+    eligibility = described_class.new(product: product, store: store, user: user, variant: variant, order: order)
+
+    expect(eligibility).not_to be_can_review
+    expect(eligibility.reason).to eq('not_purchased')
+    expect(eligibility.eligible_order).to be_nil
   end
 end

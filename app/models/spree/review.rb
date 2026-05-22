@@ -12,14 +12,15 @@ module Spree
     attribute :not_helpful_count, :integer, default: 0
 
     self.whitelisted_ransackable_attributes = %w[
-      product_id variant_id store_id user_id rating status verified_purchase
+      product_id variant_id order_id store_id user_id rating status verified_purchase
       reviewer_name title body locale helpful_count not_helpful_count
       created_at updated_at
     ]
-    self.whitelisted_ransackable_associations = %w[product variant store user answers review_media]
+    self.whitelisted_ransackable_associations = %w[product variant order store user answers review_media]
 
     belongs_to :product, class_name: 'Spree::Product', inverse_of: :reviews, touch: true
     belongs_to :variant, class_name: 'Spree::Variant', optional: true
+    belongs_to :order, class_name: 'Spree::Order', optional: true
     belongs_to :store, class_name: 'Spree::Store'
     belongs_to :user, class_name: Spree.user_class.to_s, optional: true
 
@@ -33,7 +34,7 @@ module Spree
     validates :product, :store, :title, :body, presence: true
     validates :status, presence: true, inclusion: { in: STATUSES }
     validates :verified_purchase, inclusion: { in: [true, false] }
-    validates :user_id, uniqueness: { scope: [:store_id, :product_id, :variant_id], allow_nil: true }
+    validates :user_id, uniqueness: { scope: [:store_id, :order_id, :product_id, :variant_id], allow_nil: true }
     validates :rating, numericality: {
       only_integer: true,
       greater_than_or_equal_to: 1,
@@ -41,6 +42,8 @@ module Spree
     }
     validate :product_belongs_to_store
     validate :variant_belongs_to_product
+    validate :order_belongs_to_store_and_user
+    validate :order_contains_reviewed_item
     validate :review_media_count_within_limit
 
     scope :approved, -> { where(status: 'approved') }
@@ -155,6 +158,28 @@ module Spree
       return if variant.product_id == product.id
 
       errors.add(:variant, :invalid)
+    end
+
+    def order_belongs_to_store_and_user
+      return if order.blank?
+
+      errors.add(:order, :invalid) if store.present? && order.store_id != store.id
+      errors.add(:order, :invalid) if user.present? && order.user_id != user.id
+    end
+
+    def order_contains_reviewed_item
+      return if order.blank? || product.blank?
+      return if order_contains_variant_or_product?
+
+      errors.add(:order, :invalid)
+    end
+
+    def order_contains_variant_or_product?
+      if variant.present?
+        order.line_items.exists?(variant_id: variant.id)
+      else
+        order.line_items.joins(:variant).exists?(spree_variants: { product_id: product.id })
+      end
     end
 
     def review_media_count_within_limit

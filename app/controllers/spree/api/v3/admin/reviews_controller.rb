@@ -37,6 +37,7 @@ module Spree
             [
               :product,
               :variant,
+              :order,
               :store,
               :user,
               review_media: { attachment_attachment: :blob },
