@@ -13,7 +13,7 @@ module Spree
 
     self.whitelisted_ransackable_attributes = %w[
       product_id store_id user_id rating status verified_purchase reviewer_name
-      locale helpful_count not_helpful_count created_at updated_at
+      title body locale helpful_count not_helpful_count created_at updated_at
     ]
     self.whitelisted_ransackable_associations = %w[product store user answers review_media]
 

@@ -1,0 +1,21 @@
+<tr class="nested-form-wrapper" data-new-record="<%= f.object.new_record? %>">
+  <td>
+    <%= f.hidden_field :id %>
+    <%= f.text_field :value, class: 'form-input' %>
+  </td>
+  <td>
+    <%= f.text_field :label, class: 'form-input' %>
+  </td>
+  <td>
+    <%= f.number_field :position, class: 'form-input', min: 0 %>
+  </td>
+  <td>
+    <%= f.check_box :active, class: 'form-check-input' %>
+  </td>
+  <td class="text-right">
+    <button type="button" class="btn btn-danger btn-sm" data-action="nested-form#remove">
+      <%= icon('trash', class: 'mr-0') %>
+    </button>
+    <%= f.hidden_field :_destroy %>
+  </td>
+</tr>

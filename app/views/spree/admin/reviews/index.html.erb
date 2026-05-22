@@ -1,0 +1,9 @@
+<% content_for :page_title do %>
+  Reviews
+<% end %>
+
+<% content_for :page_actions do %>
+  <%= link_to_with_icon 'list-check', 'Review questions', spree.admin_review_questions_path, class: 'btn btn-light' %>
+<% end %>
+
+<%= render_table @collection, :reviews %>

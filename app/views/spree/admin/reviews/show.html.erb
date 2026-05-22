@@ -1,0 +1,126 @@
+<% content_for :page_title do %>
+  <%= page_header_back_button(spree.admin_reviews_path) %>
+  <%= @review.title %>
+<% end %>
+
+<% content_for :page_actions do %>
+  <% unless @review.status == 'approved' %>
+    <%= link_to_with_icon 'check', 'Approve', spree.approve_admin_review_path(@review), class: 'btn btn-primary', data: { turbo_method: :put } %>
+  <% end %>
+  <% unless @review.status == 'rejected' %>
+    <%= link_to_with_icon 'x', 'Reject', spree.reject_admin_review_path(@review), class: 'btn btn-light', data: { turbo_method: :put } %>
+  <% end %>
+  <%= link_to_with_icon 'trash', Spree.t('actions.destroy'), spree.admin_review_path(@review), class: 'btn btn-danger', data: { turbo_method: :delete, turbo_confirm: Spree.t(:are_you_sure) } %>
+<% end %>
+
+<div class="grid grid-cols-12 gap-6">
+  <div class="col-span-12 lg:col-span-8">
+    <div class="card mb-6">
+      <div class="card-header">
+        <h5 class="card-title">Review</h5>
+      </div>
+      <div class="card-body">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="badge <%= @review.status == 'approved' ? 'badge-active' : (@review.status == 'pending' ? 'badge-warning' : 'badge-inactive') %>">
+            <%= @review.status.humanize %>
+          </span>
+          <span class="font-semibold"><%= @review.rating %> / 5</span>
+          <% if @review.verified_purchase? %>
+            <span class="badge badge-active">Verified purchase</span>
+          <% end %>
+        </div>
+
+        <h2 class="text-xl font-semibold mb-3"><%= @review.title %></h2>
+        <div class="text-gray-700 whitespace-pre-line"><%= @review.body %></div>
+      </div>
+    </div>
+
+    <% if @review.review_media.any? %>
+      <div class="card mb-6">
+        <div class="card-header">
+          <h5 class="card-title">Images</h5>
+        </div>
+        <div class="card-body">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <% @review.review_media.each do |media| %>
+              <% next unless media.attachment.attached? %>
+              <div class="rounded border bg-gray-25 overflow-hidden">
+                <%= spree_image_tag media.attachment, width: 240, height: 240, alt: media.alt, class: 'w-full aspect-square object-cover' %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <% if @review.answers.any? %>
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title">Question answers</h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Question</th>
+                  <th>Answer</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @review.answers.includes(:question, :option).each do |answer| %>
+                  <tr>
+                    <td><%= answer.question.label %></td>
+                    <td><%= answer.option&.label || answer.value %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="col-span-12 lg:col-span-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title">Details</h5>
+      </div>
+      <div class="card-body">
+        <dl class="grid grid-cols-1 gap-4 text-sm">
+          <div>
+            <dt class="text-gray-500">Product</dt>
+            <dd class="font-medium">
+              <% if @review.product.present? %>
+                <%= link_to @review.product.name, spree.edit_admin_product_path(@review.product), data: { turbo_frame: '_top' } %>
+              <% else %>
+                -
+              <% end %>
+            </dd>
+          </div>
+          <div>
+            <dt class="text-gray-500">Reviewer</dt>
+            <dd class="font-medium"><%= @review.reviewer_display_name %></dd>
+          </div>
+          <div>
+            <dt class="text-gray-500">Locale</dt>
+            <dd class="font-medium"><%= @review.locale.presence || '-' %></dd>
+          </div>
+          <div>
+            <dt class="text-gray-500">Helpful votes</dt>
+            <dd class="font-medium"><%= @review.helpful_count %> helpful, <%= @review.not_helpful_count %> not helpful</dd>
+          </div>
+          <div>
+            <dt class="text-gray-500">Submitted</dt>
+            <dd class="font-medium"><%= spree_time(@review.created_at) %></dd>
+          </div>
+          <div>
+            <dt class="text-gray-500">Updated</dt>
+            <dd class="font-medium"><%= spree_time(@review.updated_at) %></dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>

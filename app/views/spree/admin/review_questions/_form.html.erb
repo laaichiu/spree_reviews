@@ -1,0 +1,81 @@
+<div class="card mb-6">
+  <div class="card-header">
+    <h5 class="card-title">Question</h5>
+  </div>
+  <div class="card-body">
+    <div class="grid grid-cols-12 gap-6">
+      <div class="col-span-12 md:col-span-6">
+        <%= f.spree_text_field :label, required: true, autofocus: f.object.new_record? %>
+      </div>
+      <div class="col-span-12 md:col-span-6">
+        <%= f.spree_text_field :key, required: true %>
+      </div>
+      <div class="col-span-12 md:col-span-6">
+        <%= f.spree_select :kind, Spree::ReviewQuestion::KINDS.map { |kind| [kind.humanize, kind] }, { include_blank: false, label: 'Kind' } %>
+      </div>
+      <div class="col-span-12 md:col-span-6">
+        <%= f.spree_select :applies_to, Spree::ReviewQuestion::APPLIES_TO.map { |scope| [scope.humanize, scope] }, { include_blank: false, label: 'Applies to' } %>
+      </div>
+      <div class="col-span-12 md:col-span-6">
+        <%= f.spree_select :product_id, @products.map { |product| [product.name, product.id] }, { include_blank: 'All products', label: 'Product' } %>
+      </div>
+      <div class="col-span-12 md:col-span-6">
+        <%= f.spree_select :category_id, @categories.map { |category| [category.pretty_name.presence || category.name, category.id] }, { include_blank: 'All categories', label: 'Category' } %>
+      </div>
+      <div class="col-span-12 md:col-span-4">
+        <%= f.spree_number_field :position, min: 0 %>
+      </div>
+      <div class="col-span-12 md:col-span-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <%= f.spree_check_box :filterable %>
+          <%= f.spree_check_box :required %>
+          <%= f.spree_check_box :active %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<template data-nested-form-target="template">
+  <%= f.fields_for :options, Spree::ReviewQuestionOption.new, child_index: 'NEW_RECORD' do |option_form| %>
+    <%= render 'option_fields', f: option_form %>
+  <% end %>
+</template>
+
+<div class="card mb-6">
+  <div class="card-header flex justify-between items-center">
+    <h5 class="card-title">Answer options</h5>
+    <span class="text-sm text-gray-500"><%= f.object.options.size %> options</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Value</th>
+            <th>Label</th>
+            <th class="w-24">Position</th>
+            <th class="w-24">Active</th>
+            <th class="w-12"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= f.fields_for :options, f.object.options do |option_form| %>
+            <%= render 'option_fields', f: option_form %>
+          <% end %>
+
+          <tr data-nested-form-target="target"></tr>
+
+          <tr class="hover-none">
+            <td colspan="5" class="text-center p-2">
+              <button type="button" data-action="nested-form#add" class="btn btn-secondary py-3 w-full">
+                <%= icon('plus') %>
+                Add option
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

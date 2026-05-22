@@ -1,0 +1,10 @@
+<% content_for :page_title do %>
+  Review questions
+<% end %>
+
+<% content_for :page_actions do %>
+  <%= link_to_with_icon 'message-star', 'Reviews', spree.admin_reviews_path, class: 'btn btn-light' %>
+  <%= link_to_with_icon 'plus', 'New question', spree.new_admin_review_question_path, class: 'btn btn-primary' if can?(:create, Spree::ReviewQuestion) %>
+<% end %>
+
+<%= render_table @collection, :review_questions %>
