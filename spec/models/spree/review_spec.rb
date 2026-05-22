@@ -1,0 +1,79 @@
+require 'spec_helper'
+
+RSpec.describe Spree::Review, type: :model do
+  let(:store) { create(:store) }
+  let(:product) { create(:product, stores: [store]) }
+
+  describe 'defaults' do
+    it 'starts pending with zero vote counters' do
+      review = described_class.new(product: product, store: store, rating: 5, title: 'Great', body: 'Loved it')
+
+      expect(review.status).to eq('pending')
+      expect(review.verified_purchase).to be(false)
+      expect(review.helpful_count).to eq(0)
+      expect(review.not_helpful_count).to eq(0)
+    end
+  end
+
+  describe 'validations' do
+    it 'accepts ratings from one to five' do
+      expect(build(:review, product: product, store: store, rating: 5)).to be_valid
+      expect(build(:review, product: product, store: store, rating: 6)).not_to be_valid
+    end
+
+    it 'requires the product to belong to the review store' do
+      other_store = create(:store)
+      review = build(:review, product: product, store: other_store)
+
+      expect(review).not_to be_valid
+      expect(review.errors[:product]).to be_present
+    end
+  end
+
+  describe '.with_answer' do
+    it 'filters reviews by configured question option values' do
+      question = create(:review_question, store: store, key: 'body_type')
+      matching_option = create(:review_question_option, question: question, value: 'curvy')
+      other_option = create(:review_question_option, question: question, value: 'straight')
+      matching_review = create(:review, :approved, product: product, store: store)
+      other_review = create(:review, :approved, product: product, store: store)
+
+      create(:review_answer, review: matching_review, question: question, option: matching_option)
+      create(:review_answer, review: other_review, question: question, option: other_option)
+
+      expect(described_class.with_answer(question_key: 'body_type', values: ['curvy'])).to contain_exactly(matching_review)
+    end
+  end
+
+  describe 'summary recalculation' do
+    it 'caches approved review counts and rating distribution' do
+      create(:review, :approved, product: product, store: store, rating: 5)
+      create(:review, :approved, product: product, store: store, rating: 4)
+      create(:review, product: product, store: store, rating: 1)
+
+      summary = Spree::ProductReviewSummary.find_by!(product: product, store: store)
+
+      expect(summary.reviews_count).to eq(2)
+      expect(summary.average_rating).to eq(BigDecimal('4.5'))
+      expect(summary.rating_distribution).to eq(
+        1 => 0,
+        2 => 0,
+        3 => 0,
+        4 => 1,
+        5 => 1
+      )
+    end
+
+    it 'updates the summary when a pending review is approved' do
+      review = create(:review, product: product, store: store, rating: 3)
+      summary = Spree::ProductReviewSummary.find_by!(product: product, store: store)
+
+      expect(summary.reviews_count).to eq(0)
+
+      review.approve!
+
+      expect(summary.reload.reviews_count).to eq(1)
+      expect(summary.average_rating).to eq(BigDecimal('3.0'))
+    end
+  end
+end

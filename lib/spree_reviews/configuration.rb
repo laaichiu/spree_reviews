@@ -1,13 +1,8 @@
 module SpreeReviews
   class Configuration < Spree::Preferences::Configuration
-
-   # Some example preferences are shown below, for more information visit:
-   # https://docs.spreecommerce.org/developer/contributing/creating-an-extension
-
-   # preference :enabled, :boolean, default: true
-   # preference :dark_chocolate, :boolean, default: true
-   # preference :color, :string, default: 'Red'
-   # preference :favorite_number, :integer
-   # preference :supported_locales, :array, default: [:en]
+    preference :require_login, :boolean, default: false
+    preference :auto_approve_reviews, :boolean, default: false
+    preference :max_images_per_review, :integer, default: 5
+    preference :max_image_size_megabytes, :integer, default: 10
   end
 end

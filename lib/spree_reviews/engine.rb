@@ -26,5 +26,9 @@ module SpreeReviews
         app.config.importmap.cache_sweepers << root.join('app/javascript')
       end
     end
+
+    config.to_prepare do
+      require_dependency SpreeReviews::Engine.root.join('app/models/spree_reviews/product_decorator').to_s
+    end
   end
 end
