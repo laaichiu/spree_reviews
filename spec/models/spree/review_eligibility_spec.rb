@@ -148,4 +148,42 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
     expect(eligibility.reason).to eq('not_purchased')
     expect(eligibility.eligible_order).to be_nil
   end
+
+  it 'rejects a requested variant when that order item was fully returned' do
+    variant = create(:reviewable_variant, product: product)
+    order = create(:shipped_order, user: user, store: store, variants: [variant])
+    order.update!(shipment_state: 'shipped')
+    create_received_return_item(order: order, variant: variant)
+
+    eligibility = described_class.new(product: product, store: store, user: user, variant: variant, order: order)
+
+    expect(eligibility).not_to be_can_review
+    expect(eligibility.reason).to eq('not_purchased')
+    expect(eligibility).not_to be_verified_purchase
+  end
+
+  it 'keeps an unreturned variant in the same order eligible' do
+    returned_variant = create(:reviewable_variant, product: product)
+    kept_variant = create(:reviewable_variant, product: product)
+    order = create(:shipped_order, user: user, store: store, variants: [returned_variant, kept_variant])
+    order.update!(shipment_state: 'shipped')
+    create_received_return_item(order: order, variant: returned_variant)
+
+    eligibility = described_class.new(product: product, store: store, user: user, variant: kept_variant, order: order)
+
+    expect(eligibility).to be_can_review
+    expect(eligibility).to be_verified_purchase
+    expect(eligibility.eligible_order).to eq(order)
+  end
+
+  it 'allows shipped variants from a partially canceled order' do
+    variant = create(:reviewable_variant, product: product)
+    order = create(:shipped_order, user: user, store: store, variants: [variant])
+    order.update_columns(state: 'partially_canceled', shipment_state: 'shipped')
+
+    eligibility = described_class.new(product: product, store: store, user: user, variant: variant, order: order)
+
+    expect(eligibility).to be_can_review
+    expect(eligibility.eligible_order).to eq(order)
+  end
 end

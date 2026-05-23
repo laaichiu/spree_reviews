@@ -309,6 +309,25 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       expect(json_response['error']['details']['reason']).to eq('not_purchased')
     end
 
+    it 'rejects customers whose purchased variant was fully returned' do
+      create_received_return_item(order: review_order, variant: review_variant)
+
+      expect {
+        post :create, params: {
+          product_id: product.prefixed_id,
+          variant_id: review_variant.prefixed_id,
+          order_id: review_order.prefixed_id,
+          rating: 5,
+          title: 'Returned item'
+        }
+      }.not_to change(Spree::Review, :count)
+
+      expect(response).to have_http_status(:forbidden)
+      expect(json_response['error']['code']).to eq('review_not_allowed')
+      expect(json_response['error']['details']['reason']).to eq('not_purchased')
+      expect(json_response['error']['details']['verified_purchase']).to be(false)
+    end
+
     it 'rejects duplicate customer reviews for the same order product variant' do
       existing_review = create(:review, product: product, order: review_order, store: store, user: user)
 

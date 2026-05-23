@@ -47,7 +47,7 @@ module Spree
       return @eligible_order if defined?(@eligible_order)
 
       @eligible_order = if order.present?
-                          eligible_orders.find_by(id: order.id)
+                          eligible_orders.find { |candidate| candidate.id == order.id }
                         else
                           first_unreviewed_eligible_order || eligible_orders.first
                         end
@@ -99,12 +99,16 @@ module Spree
     end
 
     def eligible_orders
-      Spree::Order.complete.shipped.not_canceled.
+      @eligible_orders ||= Spree::Order.complete.shipped.
         where(user_id: user.id, store_id: store.id).
+        where.not(state: 'canceled').
         joins(line_items: :variant).
         merge(eligible_variant_scope).
+        includes({ inventory_units: { return_items: :reimbursement } }, line_items: :variant).
         distinct.
-        order(completed_at: :desc, id: :desc)
+        order(completed_at: :desc, id: :desc).
+        to_a.
+        select { |candidate| reviewable_purchase_for(candidate).reviewable? }
     end
 
     def eligible_variant_scope
@@ -113,6 +117,10 @@ module Spree
       else
         Spree::Variant.where(product_id: product.id)
       end
+    end
+
+    def reviewable_purchase_for(candidate_order)
+      Spree::ReviewablePurchase.new(order: candidate_order, product: product, variant: variant)
     end
   end
 end

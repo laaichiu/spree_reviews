@@ -48,13 +48,16 @@ module Spree
     end
 
     def candidate_orders
-      orders = Spree::Order.complete.shipped.not_canceled.
+      orders = Spree::Order.complete.shipped.
                where(user_id: review.user_id, store_id: review.store_id).
+               where.not(state: 'canceled').
                joins(line_items: :variant).
                merge(candidate_variant_scope).
-               includes(line_items: :variant).
+               includes({ inventory_units: { return_items: :reimbursement } }, line_items: :variant).
                distinct.
                to_a
+
+      orders = orders.select { |order| reviewable_purchase_for(order).reviewable? }
 
       orders.sort_by { |order| order_sort_key(order) }
     end
@@ -75,13 +78,10 @@ module Spree
     end
 
     def target_variant_for(order)
-      return review.variant if review.variant.present?
+      reviewable_purchase = reviewable_purchase_for(order)
+      return review.variant if review.variant.present? && reviewable_purchase.reviewable_variant?(review.variant)
 
-      matching_line_items = order.line_items.select { |line_item| line_item.variant&.product_id == review.product_id }
-      variant_ids = matching_line_items.map(&:variant_id).uniq
-      return if variant_ids.size != 1
-
-      matching_line_items.first.variant
+      reviewable_purchase.target_variant
     end
 
     def duplicate_review_exists?(order, variant)
@@ -94,6 +94,10 @@ module Spree
       else
         reviews.where(variant_id: nil).exists?
       end
+    end
+
+    def reviewable_purchase_for(order)
+      Spree::ReviewablePurchase.new(order: order, product: review.product, variant: review.variant)
     end
   end
 end

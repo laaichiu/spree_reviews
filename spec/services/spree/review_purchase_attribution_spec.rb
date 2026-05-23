@@ -39,4 +39,27 @@ RSpec.describe Spree::ReviewPurchaseAttribution, type: :service do
     expect(review.reload.order).to be_nil
     expect(review.variant).to be_nil
   end
+
+  it 'skips fully returned purchases when backfilling legacy reviews' do
+    variant = create(:reviewable_variant, product: product)
+    returned_order = create(:shipped_order, user: user, store: store, variants: [variant])
+    kept_order = create(:shipped_order, user: user, store: store, variants: [variant])
+    returned_order.update!(completed_at: 3.days.ago, shipment_state: 'shipped')
+    kept_order.update!(completed_at: 1.day.ago, shipment_state: 'shipped')
+    create_received_return_item(order: returned_order, variant: variant)
+    review = create(
+      :review,
+      product: product,
+      store: store,
+      user: user,
+      order: nil,
+      variant: nil,
+      created_at: 2.days.ago,
+      updated_at: 2.days.ago
+    )
+
+    expect(described_class.new(review).call).to be(true)
+    expect(review.reload.order).to eq(kept_order)
+    expect(review.variant).to eq(variant)
+  end
 end

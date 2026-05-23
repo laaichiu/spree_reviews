@@ -159,6 +159,30 @@ RSpec.describe Spree::Review, type: :model do
       expect(review).not_to be_valid
       expect(review.errors[:order]).to be_present
     end
+
+    it 'requires the reviewed order variant to have unreturned quantity for new reviews' do
+      user = create(:user)
+      variant = create(:reviewable_variant, product: product)
+      order = create(:shipped_order, user: user, store: store, variants: [variant])
+      create_received_return_item(order: order, variant: variant)
+
+      review = build(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
+
+      expect(review).not_to be_valid
+      expect(review.errors[:order]).to be_present
+    end
+
+    it 'allows existing reviews to be moderated after a later return' do
+      user = create(:user)
+      variant = create(:reviewable_variant, product: product)
+      order = create(:shipped_order, user: user, store: store, variants: [variant])
+      review = create(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
+      create_received_return_item(order: order, variant: variant)
+
+      review.status = 'approved'
+
+      expect(review).to be_valid
+    end
   end
 
   describe '#attributed_order' do

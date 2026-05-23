@@ -267,17 +267,21 @@ module Spree
 
     def order_contains_reviewed_item
       return if order.blank? || product.blank?
-      return if order_contains_variant_or_product?
+      return unless order_purchase_validation_required?
+      return if order_contains_reviewable_purchase?
 
       errors.add(:order, :invalid)
     end
 
-    def order_contains_variant_or_product?
-      if variant.present?
-        order.line_items.exists?(variant_id: variant.id)
-      else
-        order.line_items.joins(:variant).exists?(spree_variants: { product_id: product.id })
-      end
+    def order_purchase_validation_required?
+      new_record? ||
+        will_save_change_to_order_id? ||
+        will_save_change_to_product_id? ||
+        will_save_change_to_variant_id?
+    end
+
+    def order_contains_reviewable_purchase?
+      Spree::ReviewablePurchase.new(order: order, product: product, variant: variant).reviewable?
     end
 
     def review_media_count_within_limit
