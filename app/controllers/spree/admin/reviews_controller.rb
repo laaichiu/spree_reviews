@@ -44,7 +44,7 @@ module Spree
       private
 
       def add_review_breadcrumb
-        add_breadcrumb 'Review', spree.admin_review_path(@review) if @review&.persisted?
+        add_breadcrumb @review.admin_display_name, spree.admin_review_path(@review) if @review&.persisted?
       end
     end
   end

@@ -1,8 +1,8 @@
-<% content_for :title, 'Review - Reviews' %>
+<% content_for :title, "#{@review.admin_display_name} - Reviews" %>
 
 <% content_for :page_title do %>
   <%= page_header_back_button(spree.admin_reviews_path) %>
-  Review
+  <%= @review.admin_display_name %>
 <% end %>
 
 <% content_for :page_actions do %>
@@ -31,6 +31,10 @@
             <span class="badge badge-active">Verified purchase</span>
           <% end %>
         </div>
+
+        <% if @review.title.present? %>
+          <h3 class="text-lg font-semibold mb-3"><%= @review.title %></h3>
+        <% end %>
 
         <% if @review.body.present? %>
           <div class="text-gray-700 whitespace-pre-line"><%= @review.body %></div>

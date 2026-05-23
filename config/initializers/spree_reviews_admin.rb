@@ -25,7 +25,7 @@ Rails.application.config.after_initialize do
 
   unless Spree.admin.tables.registered?(:reviews)
     review_search_param = %i[
-      body reviewer_name user_first_name user_last_name user_email
+      title body reviewer_name user_first_name user_last_name user_email
     ].join('_or_')
     review_search_param = :"#{review_search_param}_cont"
 
@@ -48,13 +48,22 @@ Rails.application.config.after_initialize do
                                    default: true,
                                    position: 10
 
-    Spree.admin.tables.reviews.add :body,
-                                   label: 'Review',
+    Spree.admin.tables.reviews.add :title,
+                                   label: 'Title',
                                    type: :link,
-                                   sortable: false,
+                                   sortable: true,
                                    filterable: true,
                                    default: true,
                                    position: 20,
+                                   method: ->(review) { review.admin_display_name }
+
+    Spree.admin.tables.reviews.add :body,
+                                   label: 'Review',
+                                   type: :string,
+                                   sortable: false,
+                                   filterable: true,
+                                   default: true,
+                                   position: 30,
                                    method: ->(review) { review.body_excerpt }
 
     Spree.admin.tables.reviews.add :product,
@@ -63,7 +72,7 @@ Rails.application.config.after_initialize do
                                    sortable: false,
                                    filterable: false,
                                    default: true,
-                                   position: 30,
+                                   position: 40,
                                    method: ->(review) { review.product&.name }
 
     Spree.admin.tables.reviews.add :status,
@@ -72,7 +81,7 @@ Rails.application.config.after_initialize do
                                    sortable: true,
                                    filterable: true,
                                    default: true,
-                                   position: 40
+                                   position: 50
 
     Spree.admin.tables.reviews.add :reviewer_name,
                                    label: 'Customer',
@@ -80,7 +89,7 @@ Rails.application.config.after_initialize do
                                    sortable: true,
                                    filterable: true,
                                    default: true,
-                                   position: 50,
+                                   position: 60,
                                    method: ->(review) { review.admin_reviewer_name },
                                    partial: 'spree/admin/reviews/reviewer',
                                    partial_locals: ->(review) { { review: review } }
@@ -91,7 +100,7 @@ Rails.application.config.after_initialize do
                                    sortable: false,
                                    filterable: false,
                                    default: true,
-                                   position: 60,
+                                   position: 70,
                                    method: ->(review) { review.attributed_order&.number },
                                    partial: 'spree/admin/reviews/order',
                                    partial_locals: ->(review) { { review: review } }
@@ -102,7 +111,7 @@ Rails.application.config.after_initialize do
                                    sortable: true,
                                    filterable: true,
                                    default: true,
-                                   position: 70
+                                   position: 80
 
     Spree.admin.tables.reviews.add :created_at,
                                    label: 'Submitted',
@@ -110,7 +119,7 @@ Rails.application.config.after_initialize do
                                    sortable: true,
                                    filterable: true,
                                    default: true,
-                                   position: 80
+                                   position: 90
   end
 
   unless Spree.admin.tables.registered?(:review_questions)

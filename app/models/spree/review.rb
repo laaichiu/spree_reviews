@@ -36,6 +36,7 @@ module Spree
     validates :product, :store, presence: true
     validates :status, presence: true, inclusion: { in: STATUSES }
     validates :verified_purchase, inclusion: { in: [true, false] }
+    validates :title, presence: true, if: :title_required?
     validates :user_id, uniqueness: { scope: [:store_id, :order_id, :product_id, :variant_id], allow_nil: true }
     validates :rating, numericality: {
       only_integer: true,
@@ -184,7 +185,7 @@ module Spree
     end
 
     def admin_display_name
-      "Review #{prefixed_id || id || ''}".squish
+      title.presence || "Review #{prefixed_id || id || ''}".squish
     end
 
     def body_excerpt(length: 100)
@@ -225,6 +226,10 @@ module Spree
     def normalize_optional_text_fields
       self.title = title.to_s.squish
       self.body = body.to_s.strip
+    end
+
+    def title_required?
+      new_record? || will_save_change_to_title? || title_in_database.present?
     end
 
     def product_belongs_to_store

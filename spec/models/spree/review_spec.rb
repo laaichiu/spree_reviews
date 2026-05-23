@@ -5,8 +5,8 @@ RSpec.describe Spree::Review, type: :model do
   let(:product) { create(:product, stores: [store]) }
 
   describe 'defaults' do
-    it 'starts pending with zero vote counters and optional text fields' do
-      review = described_class.new(product: product, store: store, rating: 5)
+    it 'starts pending with zero vote counters and optional body' do
+      review = described_class.new(product: product, store: store, rating: 5, title: 'Great fit')
 
       expect(review).to be_valid
       expect(review.status).to eq('pending')
@@ -16,7 +16,7 @@ RSpec.describe Spree::Review, type: :model do
 
       review.validate
 
-      expect(review.title).to eq('')
+      expect(review.title).to eq('Great fit')
       expect(review.body).to eq('')
       expect(review.body_excerpt).to eq('No written review')
     end
@@ -54,6 +54,31 @@ RSpec.describe Spree::Review, type: :model do
     it 'accepts ratings from one to five' do
       expect(build(:review, product: product, store: store, rating: 5)).to be_valid
       expect(build(:review, product: product, store: store, rating: 6)).not_to be_valid
+    end
+
+    it 'requires a title for new reviews' do
+      review = build(:review, product: product, store: store, title: '')
+
+      expect(review).not_to be_valid
+      expect(review.errors[:title]).to be_present
+    end
+
+    it 'does not allow an existing review title to be cleared' do
+      review = create(:review, product: product, store: store, title: 'Great fit')
+
+      review.title = ''
+
+      expect(review).not_to be_valid
+      expect(review.errors[:title]).to be_present
+    end
+
+    it 'allows legacy blank-title reviews to be moderated' do
+      review = create(:review, product: product, store: store)
+      review.update_column(:title, '')
+
+      review.status = 'approved'
+
+      expect(review).to be_valid
     end
 
     it 'requires the product to belong to the review store' do

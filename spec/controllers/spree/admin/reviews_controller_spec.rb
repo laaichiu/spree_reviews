@@ -19,6 +19,7 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
       store: store,
       user: review_user,
       order: review_order,
+      title: 'Fabulous dress',
       body: 'Soft fabric and clean stitching.',
       reviewer_name: 'Old Public Name',
       helpful_count: 2,
@@ -37,7 +38,9 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
       expect(response.body).not_to include('Hello SpreeReviews')
       expect(assigns(:collection)).to contain_exactly(review)
       expect(response.body).to include('Rating')
+      expect(response.body).to include('Title')
       expect(response.body).to include('Review')
+      expect(response.body).to include('Fabulous dress')
       expect(response.body).to include('Soft fabric and clean stitching.')
       expect(response.body).to include('Jacqueline Brown')
       expect(response.body).to include('Customer')
@@ -69,8 +72,9 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
       get :show, params: { id: review.to_param }
 
       expect(response).to be_successful
-      expect(response.body).to match(%r{<title>\s*Review\s*-\s*Reviews\s*-\s*[^<]+</title>})
+      expect(response.body).to match(%r{<title>\s*Fabulous dress\s*-\s*Reviews\s*-\s*[^<]+</title>})
       expect(response.body).not_to include('Hello SpreeReviews')
+      expect(response.body).to include('Fabulous dress')
       expect(response.body).to include('Soft fabric and clean stitching.')
       expect(response.body).to include('Jacqueline Brown')
       expect(response.body).to include(admin_user_path(review_user))
