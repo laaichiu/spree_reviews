@@ -21,6 +21,7 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
       order: review_order,
       title: 'Fabulous dress with a polished fit and clean finish for everyday wear through spring and summer',
       body: 'Soft fabric and clean stitching. The shape is easy to wear, the fabric holds up through a full day, and the finish feels polished enough for dinner.',
+      verified_purchase: true,
       reviewer_name: 'Old Public Name',
       helpful_count: 2,
       not_helpful_count: 1
@@ -40,6 +41,7 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
       expect(response.body).to include('Rating')
       expect(response.body).to include('Title')
       expect(response.body).to include('Content')
+      expect(response.body).to include('Verified purchase')
       expect(response.body).to include(review.title_excerpt)
       expect(response.body).to include(review.body_excerpt)
       expect(response.body).not_to include(review.title)
@@ -75,6 +77,10 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
       expect(response.body).to match(%r{<title>\s*#{Regexp.escape(review.title)}\s*-\s*Reviews\s*-\s*[^<]+</title>})
       expect(response.body).not_to include('Hello SpreeReviews')
       expect(response.body).to include(review.title)
+      expect(response.body).to match(
+        %r{<span>#{Regexp.escape(review.admin_display_name)}</span>.*<span class="badge badge-warning">\s*Pending\s*</span>.*<span class="badge badge-active">Verified purchase</span>}m
+      )
+      expect(response.body.scan('Verified purchase').length).to eq(1)
       expect(response.body).to include(review.body)
       expect(response.body).to include('Jacqueline Brown')
       expect(response.body).to include(admin_user_path(review_user))

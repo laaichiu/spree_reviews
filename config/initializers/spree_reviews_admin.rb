@@ -75,7 +75,7 @@ Rails.application.config.after_initialize do
                                    position: 40
 
     Spree.admin.tables.reviews.add :verified_purchase,
-                                   label: 'Verified',
+                                   label: 'Verified purchase',
                                    type: :boolean,
                                    sortable: true,
                                    filterable: true,

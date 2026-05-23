@@ -1,8 +1,16 @@
 <% content_for :title, "#{@review.admin_display_name} - Reviews" %>
 
 <% content_for :page_title do %>
-  <%= page_header_back_button(spree.admin_reviews_path) %>
-  <%= @review.admin_display_name %>
+  <div class="flex items-center gap-3 flex-wrap">
+    <%= page_header_back_button(spree.admin_reviews_path) %>
+    <span><%= @review.admin_display_name %></span>
+    <span class="badge <%= @review.status == 'approved' ? 'badge-active' : (@review.status == 'pending' ? 'badge-warning' : 'badge-inactive') %>">
+      <%= @review.status.humanize %>
+    </span>
+    <% if @review.verified_purchase? %>
+      <span class="badge badge-active">Verified purchase</span>
+    <% end %>
+  </div>
 <% end %>
 
 <% content_for :page_actions do %>
@@ -22,14 +30,8 @@
         <h5 class="card-title">Review</h5>
       </div>
       <div class="card-body">
-        <div class="flex items-center gap-3 mb-4">
-          <span class="badge <%= @review.status == 'approved' ? 'badge-active' : (@review.status == 'pending' ? 'badge-warning' : 'badge-inactive') %>">
-            <%= @review.status.humanize %>
-          </span>
-          <span class="font-semibold"><%= @review.rating %> / 5</span>
-          <% if @review.verified_purchase? %>
-            <span class="badge badge-active">Verified purchase</span>
-          <% end %>
+        <div class="font-semibold mb-4">
+          <%= @review.rating %> / 5
         </div>
 
         <% if @review.title.present? %>
