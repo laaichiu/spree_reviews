@@ -26,10 +26,15 @@ Rails.application.config.after_initialize do
   end
 
   unless Spree.admin.tables.registered?(:reviews)
+    review_search_param = %i[
+      title body reviewer_name user_first_name user_last_name user_email
+    ].join('_or_')
+    review_search_param = :"#{review_search_param}_cont"
+
     Spree.admin.tables.register(
       :reviews,
       model_class: Spree::Review,
-      search_param: :title_or_body_or_reviewer_name_cont,
+      search_param: review_search_param,
       search_placeholder: 'Search reviews',
       row_actions: false,
       new_resource: false,
@@ -72,12 +77,14 @@ Rails.application.config.after_initialize do
 
     Spree.admin.tables.reviews.add :reviewer_name,
                                    label: 'Reviewer',
-                                   type: :string,
+                                   type: :custom,
                                    sortable: true,
                                    filterable: true,
                                    default: true,
                                    position: 50,
-                                   method: ->(review) { review.reviewer_display_name }
+                                   method: ->(review) { review.admin_reviewer_name },
+                                   partial: 'spree/admin/reviews/reviewer',
+                                   partial_locals: ->(review) { { review: review } }
 
     Spree.admin.tables.reviews.add :verified_purchase,
                                    label: 'Verified',

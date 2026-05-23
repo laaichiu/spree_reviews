@@ -27,6 +27,10 @@ module Spree
             review.order&.prefixed_id
           end
 
+          attribute :reviewer_name do |review|
+            review.admin_reviewer_name
+          end
+
           many :review_media,
                key: :media,
                resource: Spree::Api::V3::ReviewMediaSerializer

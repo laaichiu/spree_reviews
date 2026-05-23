@@ -101,7 +101,15 @@
           </div>
           <div>
             <dt class="text-gray-500">Reviewer</dt>
-            <dd class="font-medium"><%= @review.reviewer_display_name %></dd>
+            <dd class="font-medium">
+              <% if @review.user.present? %>
+                <%= link_to @review.admin_reviewer_name,
+                            spree.admin_user_path(@review.user),
+                            data: { turbo_frame: '_top' } %>
+              <% else %>
+                <%= @review.admin_reviewer_name %>
+              <% end %>
+            </dd>
           </div>
           <div>
             <dt class="text-gray-500">Locale</dt>

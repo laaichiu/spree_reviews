@@ -6,13 +6,16 @@ RSpec.describe Spree::Api::V3::Admin::ReviewsController, type: :controller do
   include_context 'API v3 Admin authenticated'
 
   let(:product) { create(:product, stores: [store]) }
+  let(:review_user) { create(:user, first_name: 'Jacqueline', last_name: 'Brown') }
   let!(:review) do
     create(
       :review,
       product: product,
       store: store,
+      user: review_user,
       title: 'Needs review',
       status: 'pending',
+      reviewer_name: 'Old Public Name',
       private_metadata: { moderation: 'queued' }
     )
   end
@@ -52,7 +55,16 @@ RSpec.describe Spree::Api::V3::Admin::ReviewsController, type: :controller do
       expect(json_response['product_id']).to eq(product.prefixed_id)
       expect(json_response).to have_key('user_id')
       expect(json_response).to have_key('order_id')
-      expect(json_response).to have_key('reviewer_name')
+      expect(json_response['reviewer_name']).to eq('Jacqueline Brown')
+    end
+
+    it 'returns the current customer profile name as the reviewer name' do
+      review_user.update!(first_name: 'Solomia', last_name: 'Smith')
+
+      get :show, params: { id: review.prefixed_id }, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(json_response['reviewer_name']).to eq('Solomia Smith')
     end
   end
 

@@ -1,0 +1,11 @@
+<% review = local_assigns.fetch(:review, record) %>
+<% reviewer_name = review.admin_reviewer_name %>
+
+<% if review.user.present? %>
+  <%= link_to reviewer_name,
+              spree.admin_user_path(review.user),
+              class: 'font-medium text-gray-900',
+              data: { turbo_frame: '_top' } %>
+<% else %>
+  <span class="font-medium text-gray-900"><%= reviewer_name %></span>
+<% end %>

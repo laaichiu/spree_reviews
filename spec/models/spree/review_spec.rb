@@ -28,6 +28,19 @@ RSpec.describe Spree::Review, type: :model do
       expect(described_class.public_reviewer_name_from_parts('Jacqueline', nil)).to eq('Jacqueline')
       expect(described_class.public_reviewer_name_from_parts(nil, 'Brown')).to eq('B.')
     end
+
+    it 'uses the current profile name for associated users while keeping public display private' do
+      user = create(:user, first_name: 'Jacqueline', last_name: 'Brown')
+      review = create(:review, product: product, store: store, user: user, reviewer_name: 'Old Name')
+
+      expect(review.admin_reviewer_name).to eq('Jacqueline Brown')
+      expect(review.reviewer_display_name).to eq('Jacqueline B.')
+
+      user.update!(first_name: 'Solomia', last_name: 'Smith')
+
+      expect(review.reload.admin_reviewer_name).to eq('Solomia Smith')
+      expect(review.reviewer_display_name).to eq('Solomia S.')
+    end
   end
 
   describe 'validations' do

@@ -6,14 +6,16 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
 
   let(:store) { @default_store }
   let(:product) { create(:product, stores: [store]) }
+  let(:review_user) { create(:user, first_name: 'Jacqueline', last_name: 'Brown') }
   let!(:review) do
     create(
       :review,
       product: product,
       store: store,
+      user: review_user,
       title: 'Needs review',
       body: 'Soft fabric and clean stitching.',
-      reviewer_name: 'Julie M.',
+      reviewer_name: 'Old Public Name',
       helpful_count: 2,
       not_helpful_count: 1
     )
@@ -28,6 +30,7 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
       expect(response).to be_successful
       expect(assigns(:collection)).to contain_exactly(review)
       expect(response.body).to include('Needs review')
+      expect(response.body).to include('Jacqueline Brown')
       expect(response.body).not_to include('Other store review')
     end
   end
@@ -44,11 +47,22 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
       expect(response).to be_successful
       expect(response.body).to include('Needs review')
       expect(response.body).to include('Soft fabric and clean stitching.')
-      expect(response.body).to include('Julie M.')
+      expect(response.body).to include('Jacqueline Brown')
+      expect(response.body).to include(admin_user_path(review_user))
       expect(response.body).to include('Overall fit')
       expect(response.body).to include('True to size')
       expect(response.body).to include('Images')
       expect(response.body).to include('Fit photo')
+    end
+
+    it 'reflects customer profile name changes in the reviewer detail' do
+      review_user.update!(first_name: 'Solomia', last_name: 'Smith')
+
+      get :show, params: { id: review.to_param }
+
+      expect(response).to be_successful
+      expect(response.body).to include('Solomia Smith')
+      expect(response.body).not_to include('Jacqueline Brown')
     end
   end
 

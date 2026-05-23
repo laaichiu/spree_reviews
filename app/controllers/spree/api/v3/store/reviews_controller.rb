@@ -283,20 +283,7 @@ module Spree
           end
 
           def reviewer_name_snapshot(user)
-            return if user.blank?
-
-            first_name = user.try(:firstname).presence || user.try(:first_name).presence
-            last_name = user.try(:lastname).presence || user.try(:last_name).presence
-            if first_name.present? || last_name.present?
-              return Spree::Review.public_reviewer_name_from_parts(
-                first_name,
-                last_name
-              )
-            end
-
-            if user.respond_to?(:name) && user.name.present?
-              Spree::Review.public_reviewer_name(user.name)
-            end
+            Spree::Review.profile_reviewer_name_from_user(user)
           end
         end
       end

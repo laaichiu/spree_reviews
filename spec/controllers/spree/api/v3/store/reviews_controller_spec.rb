@@ -102,7 +102,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       expect(json_response).not_to have_key('reviewer_name')
     end
 
-    it 'stores a privacy-formatted reviewer name from the customer profile' do
+    it 'stores a profile reviewer name while returning a privacy-formatted public display name' do
       user.update!(first_name: 'Jacqueline', last_name: 'Brown')
 
       post :create, params: {
@@ -116,7 +116,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       }
 
       expect(response).to have_http_status(:created)
-      expect(Spree::Review.last.reviewer_name).to eq('Jacqueline B.')
+      expect(Spree::Review.last.reviewer_name).to eq('Jacqueline Brown')
       expect(json_response['reviewer_display_name']).to eq('Jacqueline B.')
     end
 

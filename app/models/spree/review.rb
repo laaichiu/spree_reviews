@@ -139,7 +139,9 @@ module Spree
       return if normalized_first_name.blank? && normalized_last_name.blank?
 
       first_name = normalized_first_name
-      first_name ||= "#{normalized_last_name.first.upcase}." if normalized_last_name.present?
+      if first_name.blank? && normalized_last_name.present?
+        first_name = "#{normalized_last_name.first.upcase}."
+      end
       last_initial = if normalized_first_name.present? && normalized_last_name.present?
                        normalized_last_name.first&.upcase
                      end
@@ -147,8 +149,36 @@ module Spree
       [first_name, last_initial.present? ? "#{last_initial}." : nil].compact.join(' ')
     end
 
+    def self.profile_reviewer_name_from_user(user)
+      return if user.blank?
+
+      first_name = user.try(:firstname).presence || user.try(:first_name).presence
+      last_name = user.try(:lastname).presence || user.try(:last_name).presence
+      full_name = [first_name, last_name].compact_blank.join(' ').presence
+      return full_name if full_name.present?
+
+      return user.full_name if user.respond_to?(:full_name) && user.full_name.present?
+      if user.respond_to?(:name) && user.name.respond_to?(:full) && user.name.full.present?
+        return user.name.full
+      end
+
+      user.name if user.respond_to?(:name) && user.name.is_a?(String) && user.name.present?
+    end
+
+    def self.admin_reviewer_name_from_user(user)
+      profile_reviewer_name_from_user(user) ||
+        (user.email.presence if user&.respond_to?(:email))
+    end
+
     def reviewer_display_name
-      self.class.public_reviewer_name(reviewer_name.presence || user_display_name) || Spree.t(:anonymous)
+      self.class.public_reviewer_name(
+        self.class.profile_reviewer_name_from_user(user) || reviewer_name.presence
+      ) ||
+        Spree.t(:anonymous)
+    end
+
+    def admin_reviewer_name
+      self.class.admin_reviewer_name_from_user(user) || reviewer_name.presence || Spree.t(:anonymous)
     end
 
     def current_vote_for(user: nil, ip_address: nil)
@@ -168,16 +198,6 @@ module Spree
     end
 
     private
-
-    def user_display_name
-      return if user.blank?
-
-      if user.respond_to?(:name) && user.name.present?
-        user.name
-      elsif user.respond_to?(:first_name) && user.first_name.present?
-        [user.first_name, user.last_name].compact_blank.join(' ')
-      end
-    end
 
     def product_belongs_to_store
       return if product.blank? || store.blank?
