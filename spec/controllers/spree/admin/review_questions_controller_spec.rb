@@ -17,6 +17,8 @@ RSpec.describe Spree::Admin::ReviewQuestionsController, type: :controller do
       get :index
 
       expect(response).to be_successful
+      expect(response.body).to match(%r{<title>\s*Review Questions\s*-\s*[^<]+</title>})
+      expect(response.body).not_to include('Hello SpreeReviews')
       expect(assigns(:collection)).to eq([first_question, second_question])
       expect(response.body).to include('Body type')
       expect(response.body).to include('Overall fit')
@@ -31,6 +33,7 @@ RSpec.describe Spree::Admin::ReviewQuestionsController, type: :controller do
       get :new
 
       expect(response).to be_successful
+      expect(response.body).to match(%r{<title>\s*New Review Question\s*-\s*Review Questions\s*-\s*[^<]+</title>})
       expect(response.body).to include('New review question')
       expect(response.body).to include('Everyday Tee')
       expect(response.body).to include('Answer options')
@@ -90,6 +93,7 @@ RSpec.describe Spree::Admin::ReviewQuestionsController, type: :controller do
       get :edit, params: { id: question.to_param }
 
       expect(response).to be_successful
+      expect(response.body).to match(%r{<title>\s*Body type\s*-\s*Review Questions\s*-\s*[^<]+</title>})
       expect(response.body).to include('Body type')
       expect(response.body).to include('curvy_on_top')
       expect(response.body).to include('Curvy on top')

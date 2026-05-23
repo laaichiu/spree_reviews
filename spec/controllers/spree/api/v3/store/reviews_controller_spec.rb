@@ -157,8 +157,6 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
     end
 
     it 'creates a review with only a rating' do
-      fit_question
-
       expect {
         post :create, params: {
           product_id: product.prefixed_id,
@@ -217,8 +215,22 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       expect(Spree::Review.last.order).to eq(later_order)
     end
 
-    it 'does not require configured review questions' do
+    it 'requires configured required review questions' do
       fit_question
+
+      post :create, params: {
+        product_id: product.prefixed_id,
+        order_id: review_order.prefixed_id,
+        rating: 5
+      }
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json_response['error']['code']).to eq('validation_error')
+      expect(json_response['error']['details']['answers']).to be_present
+    end
+
+    it 'does not require optional review questions' do
+      create(:review_question, store: store, key: 'body_type', required: false)
 
       post :create, params: {
         product_id: product.prefixed_id,

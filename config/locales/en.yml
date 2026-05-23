@@ -33,5 +33,5 @@ en:
         position: Position
         value: Value
   spree:
-    reviews:
-      hello: Hello SpreeReviews
+    review_questions: Review Questions
+    reviews: Reviews
