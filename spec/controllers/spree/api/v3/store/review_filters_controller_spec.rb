@@ -34,5 +34,20 @@ RSpec.describe Spree::Api::V3::Store::ReviewFiltersController, type: :controller
       expect(fit_filter['values'].find { |value| value['value'] == 'true_to_size' }['count']).to eq(1)
       expect(images_filter['values'].first['count']).to eq(1)
     end
+
+    it 'can build facets from verified purchase reviews only' do
+      create(:review, :approved, :verified_purchase, product: product, store: store, rating: 5)
+      create(:review, :approved, product: product, store: store, rating: 1)
+
+      get :index, params: { product_id: product.prefixed_id, verified_purchase: true }
+
+      expect(response).to have_http_status(:ok)
+      expect(json_response['total_count']).to eq(1)
+
+      rating_filter = json_response['filters'].find { |filter| filter['id'] == 'rating' }
+
+      expect(rating_filter['values'].find { |value| value['value'] == '5' }['count']).to eq(1)
+      expect(rating_filter['values'].find { |value| value['value'] == '1' }['count']).to eq(0)
+    end
   end
 end

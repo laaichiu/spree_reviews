@@ -113,7 +113,15 @@ module Spree
           end
 
           def reviews
-            @reviews ||= @product.reviews.approved.for_store(current_store)
+            @reviews ||= begin
+              reviews = @product.reviews.approved.for_store(current_store)
+              reviews = reviews.verified_purchase if truthy_param?(params[:verified_purchase])
+              reviews
+            end
+          end
+
+          def truthy_param?(value)
+            ActiveModel::Type::Boolean.new.cast(value)
           end
 
         end
