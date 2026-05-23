@@ -26,6 +26,8 @@ module Spree
 
     accepts_nested_attributes_for :options, allow_destroy: true
 
+    before_validation :normalize_key
+
     validates :store, :key, :label, :kind, :applies_to, presence: true
     validates :key, uniqueness: { scope: :store_id }
     validates :kind, inclusion: { in: KINDS }
@@ -62,6 +64,11 @@ module Spree
     end
 
     private
+
+    def normalize_key
+      self.key = label if key.blank? && label.present?
+      self.key = key.to_s.parameterize(separator: '_') if key.present?
+    end
 
     def target_matches_applies_to
       case applies_to

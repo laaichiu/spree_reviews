@@ -4,11 +4,25 @@
   </div>
   <div class="card-body">
     <div class="grid grid-cols-12 gap-6">
-      <div class="col-span-12 md:col-span-6">
-        <%= f.spree_text_field :label, required: true, autofocus: f.object.new_record? %>
-      </div>
-      <div class="col-span-12 md:col-span-6">
-        <%= f.spree_text_field :key, required: true %>
+      <div class="col-span-12 grid grid-cols-12 gap-6" data-controller="spree-reviews-slug-field">
+        <div class="col-span-12 md:col-span-6">
+          <%= f.spree_text_field :label,
+                                 required: true,
+                                 autofocus: f.object.new_record?,
+                                 data: {
+                                   spree_reviews_slug_field_target: 'source',
+                                   action: 'input->spree-reviews-slug-field#sync'
+                                 } %>
+        </div>
+        <div class="col-span-12 md:col-span-6">
+          <%= f.spree_text_field :key,
+                                 required: true,
+                                 data: {
+                                   spree_reviews_slug_field_target: 'slug',
+                                   action: 'input->spree-reviews-slug-field#markManual'
+                                 },
+                                 help: 'Used by APIs and storefront filters. Generated from the label using lowercase underscores.' %>
+        </div>
       </div>
       <div class="col-span-12 md:col-span-6">
         <%= f.spree_select :kind, Spree::ReviewQuestion::KINDS.map { |kind| [kind.humanize, kind] }, { include_blank: false, label: 'Kind' } %>
@@ -106,8 +120,8 @@
       <table class="table">
         <thead>
           <tr>
-            <th>Value</th>
             <th>Label</th>
+            <th>Value</th>
             <th class="w-24">Position</th>
             <th class="w-24">Active</th>
             <th class="w-12"></th>

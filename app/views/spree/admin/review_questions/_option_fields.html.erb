@@ -1,10 +1,22 @@
-<tr class="nested-form-wrapper" data-new-record="<%= f.object.new_record? %>">
+<tr class="nested-form-wrapper"
+    data-controller="spree-reviews-slug-field"
+    data-new-record="<%= f.object.new_record? %>">
   <td>
     <%= f.hidden_field :id %>
-    <%= f.text_field :value, class: 'form-input' %>
+    <%= f.text_field :label,
+                     class: 'form-input',
+                     data: {
+                       spree_reviews_slug_field_target: 'source',
+                       action: 'input->spree-reviews-slug-field#sync'
+                     } %>
   </td>
   <td>
-    <%= f.text_field :label, class: 'form-input' %>
+    <%= f.text_field :value,
+                     class: 'form-input',
+                     data: {
+                       spree_reviews_slug_field_target: 'slug',
+                       action: 'input->spree-reviews-slug-field#markManual'
+                     } %>
   </td>
   <td>
     <%= f.number_field :position, class: 'form-input', min: 0 %>

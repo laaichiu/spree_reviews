@@ -38,6 +38,9 @@ RSpec.describe Spree::Admin::ReviewQuestionsController, type: :controller do
       expect(response.body).to include('Everyday Tee')
       expect(response.body).to include('Settings')
       expect(response.body).to match(%r{<label[^>]+for="review_question_required"[^>]*>\s*Required\s*</label>})
+      expect(response.body).to include('data-controller="spree-reviews-slug-field"')
+      expect(response.body).to include("import 'application-spree-reviews'")
+      expect(response.body).to match(%r{<th>\s*Label\s*</th>\s*<th>\s*Value\s*</th>})
       expect(response.body).to include('Answer options')
     end
 

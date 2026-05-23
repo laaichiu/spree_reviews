@@ -29,6 +29,13 @@ module SpreeReviews
       end
     end
 
+    initializer 'spree_reviews.admin_importmap', after: 'spree.admin.importmap' do |app|
+      if app.config.respond_to?(:spree_admin) && app.config.spree_admin.respond_to?(:importmap)
+        app.config.spree_admin.importmap.draw(root.join('config/importmap.rb'))
+        app.config.spree_admin.cache_sweepers << root.join('app/javascript')
+      end
+    end
+
     initializer 'spree_reviews.subscribers', after: :load_config_initializers do
       require_dependency root.join('app/subscribers/spree/review_purchase_subscriber').to_s
 

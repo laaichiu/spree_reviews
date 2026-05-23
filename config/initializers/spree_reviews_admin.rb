@@ -1,6 +1,10 @@
 Rails.application.config.after_initialize do
   next unless Spree.respond_to?(:admin)
 
+  unless Spree.admin.partials.head.include?('spree/admin/shared/spree_reviews_javascript')
+    Spree.admin.partials.head << 'spree/admin/shared/spree_reviews_javascript'
+  end
+
   sidebar_nav = Spree.admin.navigation.sidebar
 
   unless sidebar_nav.exists?(:reviews)

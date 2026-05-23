@@ -5,6 +5,22 @@ RSpec.describe Spree::ReviewQuestion, type: :model do
   let(:product) { create(:product, stores: [store]) }
 
   describe 'validations' do
+    it 'generates an underscore key from the label when key is blank' do
+      question = build(:review_question, store: store, label: 'Age range', key: nil)
+
+      question.validate
+
+      expect(question.key).to eq('age_range')
+    end
+
+    it 'normalizes manually entered keys to lowercase underscores' do
+      question = build(:review_question, store: store, label: 'Age range', key: 'Age Range')
+
+      question.validate
+
+      expect(question.key).to eq('age_range')
+    end
+
     it 'requires a product target for product-scoped questions' do
       question = build(:review_question, store: store, applies_to: 'product', product: nil)
 
