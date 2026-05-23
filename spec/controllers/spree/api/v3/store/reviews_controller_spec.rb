@@ -193,6 +193,22 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       expect(json_response['error']['details']['title']).to be_present
     end
 
+    it 'limits title length' do
+      expect {
+        post :create, params: {
+          product_id: product.prefixed_id,
+          variant_id: review_variant.prefixed_id,
+          order_id: review_order.prefixed_id,
+          rating: 4,
+          title: 'A' * (Spree::Review::TITLE_MAX_LENGTH + 1)
+        }
+      }.not_to change(Spree::Review, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json_response['error']['code']).to eq('validation_error')
+      expect(json_response['error']['details']['title']).to be_present
+    end
+
     it 'allows the same customer to review a different purchased variant of the same product' do
       other_variant = create(:reviewable_variant, product: product)
       other_order = create(:shipped_order, user: user, store: store, variants: [other_variant])

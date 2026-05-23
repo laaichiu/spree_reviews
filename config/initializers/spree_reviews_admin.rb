@@ -55,10 +55,10 @@ Rails.application.config.after_initialize do
                                    filterable: true,
                                    default: true,
                                    position: 20,
-                                   method: ->(review) { review.admin_display_name }
+                                   method: ->(review) { review.title_excerpt }
 
     Spree.admin.tables.reviews.add :body,
-                                   label: 'Review',
+                                   label: 'Content',
                                    type: :string,
                                    sortable: false,
                                    filterable: true,
@@ -66,44 +66,13 @@ Rails.application.config.after_initialize do
                                    position: 30,
                                    method: ->(review) { review.body_excerpt }
 
-    Spree.admin.tables.reviews.add :product,
-                                   label: 'Product',
-                                   type: :string,
-                                   sortable: false,
-                                   filterable: false,
-                                   default: true,
-                                   position: 40,
-                                   method: ->(review) { review.product&.name }
-
     Spree.admin.tables.reviews.add :status,
                                    label: 'Status',
                                    type: :status,
                                    sortable: true,
                                    filterable: true,
                                    default: true,
-                                   position: 50
-
-    Spree.admin.tables.reviews.add :reviewer_name,
-                                   label: 'Customer',
-                                   type: :custom,
-                                   sortable: true,
-                                   filterable: true,
-                                   default: true,
-                                   position: 60,
-                                   method: ->(review) { review.admin_reviewer_name },
-                                   partial: 'spree/admin/reviews/reviewer',
-                                   partial_locals: ->(review) { { review: review } }
-
-    Spree.admin.tables.reviews.add :order,
-                                   label: 'Order',
-                                   type: :custom,
-                                   sortable: false,
-                                   filterable: false,
-                                   default: true,
-                                   position: 70,
-                                   method: ->(review) { review.attributed_order&.number },
-                                   partial: 'spree/admin/reviews/order',
-                                   partial_locals: ->(review) { { review: review } }
+                                   position: 40
 
     Spree.admin.tables.reviews.add :verified_purchase,
                                    label: 'Verified',
@@ -111,7 +80,7 @@ Rails.application.config.after_initialize do
                                    sortable: true,
                                    filterable: true,
                                    default: true,
-                                   position: 80
+                                   position: 50
 
     Spree.admin.tables.reviews.add :created_at,
                                    label: 'Submitted',
@@ -119,7 +88,7 @@ Rails.application.config.after_initialize do
                                    sortable: true,
                                    filterable: true,
                                    default: true,
-                                   position: 90
+                                   position: 60
   end
 
   unless Spree.admin.tables.registered?(:review_questions)

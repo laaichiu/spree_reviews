@@ -5,6 +5,9 @@ module Spree
     include Spree::Metadata
 
     STATUSES = %w[pending approved rejected].freeze
+    TITLE_MAX_LENGTH = 120
+    TITLE_EXCERPT_LENGTH = 80
+    BODY_EXCERPT_LENGTH = 100
 
     attribute :status, :string, default: -> { SpreeReviews::Config[:auto_approve_reviews] ? 'approved' : 'pending' }
     attribute :verified_purchase, :boolean, default: false
@@ -37,6 +40,7 @@ module Spree
     validates :status, presence: true, inclusion: { in: STATUSES }
     validates :verified_purchase, inclusion: { in: [true, false] }
     validates :title, presence: true, if: :title_required?
+    validates :title, length: { maximum: TITLE_MAX_LENGTH }, if: :title_length_validation_required?
     validates :user_id, uniqueness: { scope: [:store_id, :order_id, :product_id, :variant_id], allow_nil: true }
     validates :rating, numericality: {
       only_integer: true,
@@ -188,7 +192,11 @@ module Spree
       title.presence || "Review #{prefixed_id || id || ''}".squish
     end
 
-    def body_excerpt(length: 100)
+    def title_excerpt(length: TITLE_EXCERPT_LENGTH)
+      admin_display_name.truncate(length)
+    end
+
+    def body_excerpt(length: BODY_EXCERPT_LENGTH)
       body_text = body.to_s.squish
       return 'No written review' if body_text.blank?
 
@@ -230,6 +238,10 @@ module Spree
 
     def title_required?
       new_record? || will_save_change_to_title? || title_in_database.present?
+    end
+
+    def title_length_validation_required?
+      new_record? || will_save_change_to_title?
     end
 
     def product_belongs_to_store

@@ -22,6 +22,23 @@ RSpec.describe Spree::Review, type: :model do
     end
   end
 
+  describe '#title_excerpt and #body_excerpt' do
+    it 'summarizes long title and body text for list displays' do
+      review = build(
+        :review,
+        product: product,
+        store: store,
+        title: 'A' * described_class::TITLE_MAX_LENGTH,
+        body: 'B' * 160
+      )
+
+      expect(review.title_excerpt.length).to be <= described_class::TITLE_EXCERPT_LENGTH
+      expect(review.title_excerpt).to end_with('...')
+      expect(review.body_excerpt.length).to be <= described_class::BODY_EXCERPT_LENGTH
+      expect(review.body_excerpt).to end_with('...')
+    end
+  end
+
   describe '#reviewer_display_name' do
     it 'formats full reviewer names as a first name and last initial' do
       review = build(:review, product: product, store: store, reviewer_name: 'Jacqueline Brown')
@@ -63,6 +80,13 @@ RSpec.describe Spree::Review, type: :model do
       expect(review.errors[:title]).to be_present
     end
 
+    it 'limits new review titles' do
+      review = build(:review, product: product, store: store, title: 'A' * (described_class::TITLE_MAX_LENGTH + 1))
+
+      expect(review).not_to be_valid
+      expect(review.errors[:title]).to be_present
+    end
+
     it 'does not allow an existing review title to be cleared' do
       review = create(:review, product: product, store: store, title: 'Great fit')
 
@@ -75,6 +99,15 @@ RSpec.describe Spree::Review, type: :model do
     it 'allows legacy blank-title reviews to be moderated' do
       review = create(:review, product: product, store: store)
       review.update_column(:title, '')
+
+      review.status = 'approved'
+
+      expect(review).to be_valid
+    end
+
+    it 'allows legacy long-title reviews to be moderated' do
+      review = create(:review, product: product, store: store)
+      review.update_column(:title, 'A' * 180)
 
       review.status = 'approved'
 

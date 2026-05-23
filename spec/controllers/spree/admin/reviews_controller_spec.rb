@@ -19,8 +19,8 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
       store: store,
       user: review_user,
       order: review_order,
-      title: 'Fabulous dress',
-      body: 'Soft fabric and clean stitching.',
+      title: 'Fabulous dress with a polished fit and clean finish for everyday wear through spring and summer',
+      body: 'Soft fabric and clean stitching. The shape is easy to wear, the fabric holds up through a full day, and the finish feels polished enough for dinner.',
       reviewer_name: 'Old Public Name',
       helpful_count: 2,
       not_helpful_count: 1
@@ -39,17 +39,17 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
       expect(assigns(:collection)).to contain_exactly(review)
       expect(response.body).to include('Rating')
       expect(response.body).to include('Title')
-      expect(response.body).to include('Review')
-      expect(response.body).to include('Fabulous dress')
-      expect(response.body).to include('Soft fabric and clean stitching.')
-      expect(response.body).to include('Jacqueline Brown')
-      expect(response.body).to include('Customer')
-      expect(response.body).to include(review_order.number)
-      expect(response.body).to include(edit_admin_order_path(review_order))
+      expect(response.body).to include('Content')
+      expect(response.body).to include(review.title_excerpt)
+      expect(response.body).to include(review.body_excerpt)
+      expect(response.body).not_to include(review.title)
+      expect(response.body).not_to include(review.body)
+      expect(response.body).not_to include(admin_user_path(review_user))
+      expect(response.body).not_to include(edit_admin_order_path(review_order))
       expect(response.body).not_to include('Other store review')
     end
 
-    it 'renders attributed order links for legacy reviews missing order_id' do
+    it 'keeps customer and order details off the list view' do
       review_order.update!(completed_at: 2.days.ago)
       review.update_columns(order_id: nil, variant_id: nil, created_at: 1.day.ago, updated_at: 1.day.ago)
 
@@ -57,8 +57,8 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
 
       expect(response).to be_successful
       expect(review.reload.order).to be_nil
-      expect(response.body).to include(review_order.number)
-      expect(response.body).to include(edit_admin_order_path(review_order))
+      expect(response.body).not_to include(review_order.number)
+      expect(response.body).not_to include(edit_admin_order_path(review_order))
     end
   end
 
@@ -72,10 +72,10 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
       get :show, params: { id: review.to_param }
 
       expect(response).to be_successful
-      expect(response.body).to match(%r{<title>\s*Fabulous dress\s*-\s*Reviews\s*-\s*[^<]+</title>})
+      expect(response.body).to match(%r{<title>\s*#{Regexp.escape(review.title)}\s*-\s*Reviews\s*-\s*[^<]+</title>})
       expect(response.body).not_to include('Hello SpreeReviews')
-      expect(response.body).to include('Fabulous dress')
-      expect(response.body).to include('Soft fabric and clean stitching.')
+      expect(response.body).to include(review.title)
+      expect(response.body).to include(review.body)
       expect(response.body).to include('Jacqueline Brown')
       expect(response.body).to include(admin_user_path(review_user))
       expect(response.body).to include('Customer')
