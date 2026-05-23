@@ -36,6 +36,43 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       expect(json_response['meta']['count']).to eq(2)
     end
 
+    it 'returns multiple reviews from the same customer across separate orders' do
+      reviewer = create(:user)
+      variant = create(:reviewable_variant, product: product)
+      first_order = create(:shipped_order, user: reviewer, store: store, variants: [variant])
+      second_order = create(:shipped_order, user: reviewer, store: store, variants: [variant])
+      first_order.update!(shipment_state: 'shipped')
+      second_order.update!(shipment_state: 'shipped')
+      first_review = create(
+        :review,
+        :approved,
+        :for_variant,
+        product: product,
+        variant: variant,
+        order: first_order,
+        store: store,
+        user: reviewer
+      )
+      second_review = create(
+        :review,
+        :approved,
+        :for_variant,
+        product: product,
+        variant: variant,
+        order: second_order,
+        store: store,
+        user: reviewer
+      )
+
+      get :index, params: { product_id: product.prefixed_id }
+
+      expect(response).to have_http_status(:ok)
+      expect(json_response['data'].map { |review| review['id'] }).to include(
+        first_review.prefixed_id,
+        second_review.prefixed_id
+      )
+    end
+
     it 'filters by rating and configured answer values' do
       get :index, params: {
         product_id: product.prefixed_id,

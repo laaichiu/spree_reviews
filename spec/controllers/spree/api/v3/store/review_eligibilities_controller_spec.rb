@@ -80,6 +80,36 @@ RSpec.describe Spree::Api::V3::Store::ReviewEligibilitiesController, type: :cont
       expect(json_response['review_id']).to eq(review.prefixed_id)
     end
 
+    it 'allows a repeat purchase when a legacy review belongs to an earlier shipped order' do
+      request.headers['Authorization'] = "Bearer #{jwt_token}"
+      variant = create(:reviewable_variant, product: product)
+      earlier_order = create(:shipped_order, user: user, store: store, variants: [variant])
+      later_order = create(:shipped_order, user: user, store: store, variants: [variant])
+      earlier_order.update!(completed_at: 3.days.ago, shipment_state: 'shipped')
+      later_order.update!(completed_at: 1.day.ago, shipment_state: 'shipped')
+      create(
+        :review,
+        product: product,
+        order: nil,
+        variant: nil,
+        store: store,
+        user: user,
+        created_at: 2.days.ago,
+        updated_at: 2.days.ago
+      )
+
+      get :show, params: {
+        product_id: product.prefixed_id,
+        variant_id: variant.prefixed_id,
+        order_id: later_order.prefixed_id
+      }
+
+      expect(response).to have_http_status(:ok)
+      expect(json_response['can_review']).to be(true)
+      expect(json_response['already_reviewed']).to be(false)
+      expect(json_response['eligible_order_id']).to eq(later_order.prefixed_id)
+    end
+
     it 'checks eligibility for the requested variant' do
       request.headers['Authorization'] = "Bearer #{jwt_token}"
       variant = create(:reviewable_variant, product: product)

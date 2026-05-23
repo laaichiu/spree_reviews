@@ -73,10 +73,10 @@ module Spree
                      else
                        ordered_reviews.find_by(variant_id: nil)
                      end
-      exact_review || legacy_existing_review(reviews)
+      exact_review || legacy_existing_review_for_order(reviews, review_order)
     end
 
-    def legacy_existing_review(reviews)
+    def legacy_existing_review_for_order(reviews, review_order)
       legacy_reviews = reviews.where(order_id: nil)
       legacy_reviews = if variant.present?
                          legacy_reviews.where(variant_id: [variant.id, nil])
@@ -84,7 +84,18 @@ module Spree
                          legacy_reviews.where(variant_id: nil)
                        end
 
-      legacy_reviews.recent_first.first
+      legacy_reviews.recent_first.detect do |legacy_review|
+        legacy_review_attributed_to_order?(legacy_review, review_order)
+      end
+    end
+
+    def legacy_review_attributed_to_order?(legacy_review, review_order)
+      attribution_target = Spree::ReviewPurchaseAttribution.new(legacy_review).target
+      return false if attribution_target.blank? || attribution_target.order.id != review_order.id
+
+      variant.blank? ||
+        attribution_target.variant.blank? ||
+        attribution_target.variant.id == variant.id
     end
 
     def eligible_orders

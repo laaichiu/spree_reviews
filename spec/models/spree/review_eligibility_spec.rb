@@ -83,6 +83,44 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
     expect(eligibility.existing_review).to eq(legacy_review)
   end
 
+  it 'allows a later repeat purchase when a legacy review is attributed to an earlier order' do
+    variant = create(:reviewable_variant, product: product)
+    earlier_order = create(:shipped_order, user: user, store: store, variants: [variant])
+    later_order = create(:shipped_order, user: user, store: store, variants: [variant])
+    earlier_order.update!(completed_at: 3.days.ago, shipment_state: 'shipped')
+    later_order.update!(completed_at: 1.day.ago, shipment_state: 'shipped')
+    legacy_review = create(
+      :review,
+      product: product,
+      store: store,
+      user: user,
+      order: nil,
+      variant: nil,
+      created_at: 2.days.ago,
+      updated_at: 2.days.ago
+    )
+
+    earlier_eligibility = described_class.new(
+      product: product,
+      store: store,
+      user: user,
+      variant: variant,
+      order: earlier_order
+    )
+    later_eligibility = described_class.new(
+      product: product,
+      store: store,
+      user: user,
+      variant: variant,
+      order: later_order
+    )
+
+    expect(earlier_eligibility).not_to be_can_review
+    expect(earlier_eligibility.existing_review).to eq(legacy_review)
+    expect(later_eligibility).to be_can_review
+    expect(later_eligibility.existing_review).to be_nil
+  end
+
   it 'allows the same purchased variant to be reviewed again from a later shipped order' do
     variant = create(:reviewable_variant, product: product)
     first_order = create(:shipped_order, user: user, store: store, variants: [variant])
