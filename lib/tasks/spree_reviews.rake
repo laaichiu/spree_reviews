@@ -18,4 +18,25 @@ namespace :spree_reviews do
     action = dry_run ? 'would update' : 'updated'
     puts "spree_reviews:backfill_review_purchase_links #{action} #{updated_count} reviews, skipped #{skipped_count} reviews"
   end
+
+  desc 'Refresh review verified_purchase flags from current order and return state'
+  task refresh_verified_purchase: :environment do
+    dry_run = ActiveModel::Type::Boolean.new.cast(ENV.fetch('DRY_RUN', false))
+    updated_count = 0
+    unchanged_count = 0
+
+    Spree::ReviewVerifiedPurchaseStatus.refresh_scope.find_each do |review|
+      sync = Spree::ReviewVerifiedPurchaseStatus.new(review)
+
+      if sync.changed?
+        updated_count += 1
+        sync.call unless dry_run
+      else
+        unchanged_count += 1
+      end
+    end
+
+    action = dry_run ? 'would update' : 'updated'
+    puts "spree_reviews:refresh_verified_purchase #{action} #{updated_count} reviews, unchanged #{unchanged_count} reviews"
+  end
 end

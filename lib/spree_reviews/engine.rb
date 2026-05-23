@@ -4,6 +4,8 @@ module SpreeReviews
     isolate_namespace Spree
     engine_name 'spree_reviews'
 
+    config.paths.add 'app/subscribers', eager_load: true
+
     config.generators do |g|
       g.test_framework :rspec
     end
@@ -24,6 +26,14 @@ module SpreeReviews
         app.config.importmap.paths << root.join('config/importmap.rb')
         # https://github.com/rails/importmap-rails?tab=readme-ov-file#sweeping-the-cache-in-development-and-test
         app.config.importmap.cache_sweepers << root.join('app/javascript')
+      end
+    end
+
+    initializer 'spree_reviews.subscribers', after: :load_config_initializers do
+      require_dependency root.join('app/subscribers/spree/review_purchase_subscriber').to_s
+
+      unless Spree.subscribers.include?(Spree::ReviewPurchaseSubscriber)
+        Spree.subscribers << Spree::ReviewPurchaseSubscriber
       end
     end
 
