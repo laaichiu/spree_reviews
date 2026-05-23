@@ -65,13 +65,26 @@ module Spree
 
     def existing_review_for_order(review_order)
       reviews = Spree::Review.for_store(store).for_product(product).where(user_id: user.id)
-      reviews = reviews.where(order: review_order)
+      ordered_reviews = reviews.where(order: review_order)
 
-      if variant.present?
-        reviews.find_by(variant: variant)
-      else
-        reviews.find_by(variant_id: nil)
-      end
+      exact_review = if variant.present?
+                       ordered_reviews.find_by(variant: variant) ||
+                         ordered_reviews.find_by(variant_id: nil)
+                     else
+                       ordered_reviews.find_by(variant_id: nil)
+                     end
+      exact_review || legacy_existing_review(reviews)
+    end
+
+    def legacy_existing_review(reviews)
+      legacy_reviews = reviews.where(order_id: nil)
+      legacy_reviews = if variant.present?
+                         legacy_reviews.where(variant_id: [variant.id, nil])
+                       else
+                         legacy_reviews.where(variant_id: nil)
+                       end
+
+      legacy_reviews.recent_first.first
     end
 
     def eligible_orders

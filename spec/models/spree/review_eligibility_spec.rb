@@ -70,6 +70,19 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
     expect(eligibility.existing_review).to eq(review)
   end
 
+  it 'treats legacy product-level reviews as already reviewed for a requested order variant' do
+    variant = create(:reviewable_variant, product: product)
+    order = create(:shipped_order, user: user, store: store, variants: [variant])
+    order.update!(shipment_state: 'shipped')
+    legacy_review = create(:review, product: product, store: store, user: user, order: nil, variant: nil)
+
+    eligibility = described_class.new(product: product, store: store, user: user, variant: variant, order: order)
+
+    expect(eligibility).not_to be_can_review
+    expect(eligibility.reason).to eq('already_reviewed')
+    expect(eligibility.existing_review).to eq(legacy_review)
+  end
+
   it 'allows the same purchased variant to be reviewed again from a later shipped order' do
     variant = create(:reviewable_variant, product: product)
     first_order = create(:shipped_order, user: user, store: store, variants: [variant])
