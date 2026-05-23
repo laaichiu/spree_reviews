@@ -103,6 +103,34 @@ RSpec.describe Spree::Review, type: :model do
     end
   end
 
+  describe '#attributed_order' do
+    it 'returns the persisted order when present' do
+      user = create(:user)
+      order = create(:shipped_order, user: user, store: store, variants: [product.master])
+      review = create(:review, product: product, store: store, user: user, order: order)
+
+      expect(review.attributed_order).to eq(order)
+    end
+
+    it 'infers a shipped purchase for legacy reviews missing order_id' do
+      user = create(:user)
+      order = create(:shipped_order, user: user, store: store, variants: [product.master])
+      order.update!(completed_at: 2.days.ago, shipment_state: 'shipped')
+      review = create(
+        :review,
+        product: product,
+        store: store,
+        user: user,
+        order: nil,
+        variant: nil,
+        created_at: 1.day.ago,
+        updated_at: 1.day.ago
+      )
+
+      expect(review.attributed_order).to eq(order)
+    end
+  end
+
   describe '.with_answer' do
     it 'filters reviews by configured question option values' do
       question = create(:review_question, store: store, key: 'body_type')

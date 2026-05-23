@@ -43,6 +43,18 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
       expect(response.body).to include(edit_admin_order_path(review_order))
       expect(response.body).not_to include('Other store review')
     end
+
+    it 'renders attributed order links for legacy reviews missing order_id' do
+      review_order.update!(completed_at: 2.days.ago)
+      review.update_columns(order_id: nil, variant_id: nil, created_at: 1.day.ago, updated_at: 1.day.ago)
+
+      get :index
+
+      expect(response).to be_successful
+      expect(review.reload.order).to be_nil
+      expect(response.body).to include(review_order.number)
+      expect(response.body).to include(edit_admin_order_path(review_order))
+    end
   end
 
   describe 'GET #show' do
@@ -66,6 +78,19 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
       expect(response.body).to include('True to size')
       expect(response.body).to include('Images')
       expect(response.body).to include('Fit photo')
+    end
+
+    it 'renders attributed order details for legacy reviews missing order_id' do
+      review_order.update!(completed_at: 2.days.ago)
+      review.update_columns(order_id: nil, variant_id: nil, created_at: 1.day.ago, updated_at: 1.day.ago)
+
+      get :show, params: { id: review.to_param }
+
+      expect(response).to be_successful
+      expect(review.reload.order).to be_nil
+      expect(response.body).to include('Order')
+      expect(response.body).to include(review_order.number)
+      expect(response.body).to include(edit_admin_order_path(review_order))
     end
 
     it 'reflects customer profile name changes in the reviewer detail' do

@@ -1,5 +1,5 @@
 <% review = local_assigns.fetch(:review, record) %>
-<% order = review.order %>
+<% order = review.attributed_order %>
 
 <% if order.present? %>
   <%= link_to order.number,

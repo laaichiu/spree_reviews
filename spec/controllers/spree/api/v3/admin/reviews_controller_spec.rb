@@ -66,6 +66,18 @@ RSpec.describe Spree::Api::V3::Admin::ReviewsController, type: :controller do
       expect(response).to have_http_status(:ok)
       expect(json_response['reviewer_name']).to eq('Solomia Smith')
     end
+
+    it 'returns an attributed order ID for legacy reviews missing order_id' do
+      order = create(:shipped_order, user: review_user, store: store, variants: [product.master])
+      order.update!(completed_at: 2.days.ago, shipment_state: 'shipped')
+      review.update_columns(order_id: nil, variant_id: nil, created_at: 1.day.ago, updated_at: 1.day.ago)
+
+      get :show, params: { id: review.prefixed_id }, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(review.reload.order).to be_nil
+      expect(json_response['order_id']).to eq(order.prefixed_id)
+    end
   end
 
   describe 'PATCH #update' do

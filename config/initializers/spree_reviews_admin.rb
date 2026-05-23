@@ -92,7 +92,7 @@ Rails.application.config.after_initialize do
                                    filterable: false,
                                    default: true,
                                    position: 60,
-                                   method: ->(review) { review.order&.number },
+                                   method: ->(review) { review.attributed_order&.number },
                                    partial: 'spree/admin/reviews/order',
                                    partial_locals: ->(review) { { review: review } }
 

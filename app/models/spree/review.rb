@@ -194,6 +194,10 @@ module Spree
       body_text.truncate(length)
     end
 
+    def attributed_order
+      order || purchase_attribution_target&.order
+    end
+
     def current_vote_for(user: nil, ip_address: nil)
       if user.present?
         votes.find_by(user: user)&.vote
@@ -211,6 +215,12 @@ module Spree
     end
 
     private
+
+    def purchase_attribution_target
+      return @purchase_attribution_target if defined?(@purchase_attribution_target)
+
+      @purchase_attribution_target = Spree::ReviewPurchaseAttribution.new(self).target
+    end
 
     def normalize_optional_text_fields
       self.title = title.to_s.squish

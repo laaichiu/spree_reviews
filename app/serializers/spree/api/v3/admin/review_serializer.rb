@@ -24,7 +24,7 @@ module Spree
           end
 
           attribute :order_id do |review|
-            review.order&.prefixed_id
+            review.attributed_order&.prefixed_id
           end
 
           attribute :reviewer_name do |review|

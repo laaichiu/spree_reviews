@@ -116,10 +116,11 @@
           </div>
           <div>
             <dt class="text-gray-500">Order</dt>
+            <% attributed_order = @review.attributed_order %>
             <dd class="font-medium">
-              <% if @review.order.present? %>
-                <%= link_to @review.order.number,
-                            spree.edit_admin_order_path(@review.order),
+              <% if attributed_order.present? %>
+                <%= link_to attributed_order.number,
+                            spree.edit_admin_order_path(attributed_order),
                             data: { turbo_frame: '_top' } %>
               <% else %>
                 -
