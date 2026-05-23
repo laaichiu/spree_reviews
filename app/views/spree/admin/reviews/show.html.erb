@@ -100,7 +100,7 @@
             </dd>
           </div>
           <div>
-            <dt class="text-gray-500">Reviewer</dt>
+            <dt class="text-gray-500">Customer</dt>
             <dd class="font-medium">
               <% if @review.user.present? %>
                 <%= link_to @review.admin_reviewer_name,
@@ -108,6 +108,18 @@
                             data: { turbo_frame: '_top' } %>
               <% else %>
                 <%= @review.admin_reviewer_name %>
+              <% end %>
+            </dd>
+          </div>
+          <div>
+            <dt class="text-gray-500">Order</dt>
+            <dd class="font-medium">
+              <% if @review.order.present? %>
+                <%= link_to @review.order.number,
+                            spree.edit_admin_order_path(@review.order),
+                            data: { turbo_frame: '_top' } %>
+              <% else %>
+                -
               <% end %>
             </dd>
           </div>

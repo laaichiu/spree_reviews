@@ -7,12 +7,18 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
   let(:store) { @default_store }
   let(:product) { create(:product, stores: [store]) }
   let(:review_user) { create(:user, first_name: 'Jacqueline', last_name: 'Brown') }
+  let!(:review_order) do
+    create(:shipped_order, user: review_user, store: store, variants: [product.master]).tap do |order|
+      order.update!(shipment_state: 'shipped')
+    end
+  end
   let!(:review) do
     create(
       :review,
       product: product,
       store: store,
       user: review_user,
+      order: review_order,
       title: 'Needs review',
       body: 'Soft fabric and clean stitching.',
       reviewer_name: 'Old Public Name',
@@ -31,6 +37,9 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
       expect(assigns(:collection)).to contain_exactly(review)
       expect(response.body).to include('Needs review')
       expect(response.body).to include('Jacqueline Brown')
+      expect(response.body).to include('Customer')
+      expect(response.body).to include(review_order.number)
+      expect(response.body).to include(edit_admin_order_path(review_order))
       expect(response.body).not_to include('Other store review')
     end
   end
@@ -49,6 +58,10 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
       expect(response.body).to include('Soft fabric and clean stitching.')
       expect(response.body).to include('Jacqueline Brown')
       expect(response.body).to include(admin_user_path(review_user))
+      expect(response.body).to include('Customer')
+      expect(response.body).to include('Order')
+      expect(response.body).to include(review_order.number)
+      expect(response.body).to include(edit_admin_order_path(review_order))
       expect(response.body).to include('Overall fit')
       expect(response.body).to include('True to size')
       expect(response.body).to include('Images')

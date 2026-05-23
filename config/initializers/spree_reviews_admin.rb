@@ -74,7 +74,7 @@ Rails.application.config.after_initialize do
                                    position: 40
 
     Spree.admin.tables.reviews.add :reviewer_name,
-                                   label: 'Reviewer',
+                                   label: 'Customer',
                                    type: :custom,
                                    sortable: true,
                                    filterable: true,
@@ -84,13 +84,24 @@ Rails.application.config.after_initialize do
                                    partial: 'spree/admin/reviews/reviewer',
                                    partial_locals: ->(review) { { review: review } }
 
+    Spree.admin.tables.reviews.add :order,
+                                   label: 'Order',
+                                   type: :custom,
+                                   sortable: false,
+                                   filterable: false,
+                                   default: true,
+                                   position: 60,
+                                   method: ->(review) { review.order&.number },
+                                   partial: 'spree/admin/reviews/order',
+                                   partial_locals: ->(review) { { review: review } }
+
     Spree.admin.tables.reviews.add :verified_purchase,
                                    label: 'Verified',
                                    type: :boolean,
                                    sortable: true,
                                    filterable: true,
                                    default: true,
-                                   position: 60
+                                   position: 70
 
     Spree.admin.tables.reviews.add :created_at,
                                    label: 'Submitted',
@@ -98,7 +109,7 @@ Rails.application.config.after_initialize do
                                    sortable: true,
                                    filterable: true,
                                    default: true,
-                                   position: 70
+                                   position: 80
   end
 
   unless Spree.admin.tables.registered?(:review_questions)
