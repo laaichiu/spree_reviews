@@ -36,6 +36,8 @@ RSpec.describe Spree::Admin::ReviewQuestionsController, type: :controller do
       expect(response.body).to match(%r{<title>\s*New Review Question\s*-\s*Review Questions\s*-\s*[^<]+</title>})
       expect(response.body).to include('New review question')
       expect(response.body).to include('Everyday Tee')
+      expect(response.body).to include('Display and behavior')
+      expect(response.body).to match(%r{<label[^>]+for="review_question_required"[^>]*>\s*Required\s*</label>})
       expect(response.body).to include('Answer options')
     end
 
