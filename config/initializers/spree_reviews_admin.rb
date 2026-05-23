@@ -25,7 +25,7 @@ Rails.application.config.after_initialize do
 
   unless Spree.admin.tables.registered?(:reviews)
     review_search_param = %i[
-      title body reviewer_name user_first_name user_last_name user_email
+      body reviewer_name user_first_name user_last_name user_email
     ].join('_or_')
     review_search_param = :"#{review_search_param}_cont"
 
@@ -40,13 +40,22 @@ Rails.application.config.after_initialize do
       link_to_action: :show
     )
 
-    Spree.admin.tables.reviews.add :title,
-                                   label: 'Title',
-                                   type: :link,
+    Spree.admin.tables.reviews.add :rating,
+                                   label: 'Rating',
+                                   type: :number,
                                    sortable: true,
                                    filterable: true,
                                    default: true,
                                    position: 10
+
+    Spree.admin.tables.reviews.add :body,
+                                   label: 'Review',
+                                   type: :link,
+                                   sortable: false,
+                                   filterable: true,
+                                   default: true,
+                                   position: 20,
+                                   method: ->(review) { review.body_excerpt }
 
     Spree.admin.tables.reviews.add :product,
                                    label: 'Product',
@@ -54,16 +63,8 @@ Rails.application.config.after_initialize do
                                    sortable: false,
                                    filterable: false,
                                    default: true,
-                                   position: 20,
+                                   position: 30,
                                    method: ->(review) { review.product&.name }
-
-    Spree.admin.tables.reviews.add :rating,
-                                   label: 'Rating',
-                                   type: :number,
-                                   sortable: true,
-                                   filterable: true,
-                                   default: true,
-                                   position: 30
 
     Spree.admin.tables.reviews.add :status,
                                    label: 'Status',

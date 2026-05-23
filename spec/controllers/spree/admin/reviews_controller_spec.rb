@@ -19,7 +19,6 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
       store: store,
       user: review_user,
       order: review_order,
-      title: 'Needs review',
       body: 'Soft fabric and clean stitching.',
       reviewer_name: 'Old Public Name',
       helpful_count: 2,
@@ -35,7 +34,9 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
 
       expect(response).to be_successful
       expect(assigns(:collection)).to contain_exactly(review)
-      expect(response.body).to include('Needs review')
+      expect(response.body).to include('Rating')
+      expect(response.body).to include('Review')
+      expect(response.body).to include('Soft fabric and clean stitching.')
       expect(response.body).to include('Jacqueline Brown')
       expect(response.body).to include('Customer')
       expect(response.body).to include(review_order.number)
@@ -54,7 +55,6 @@ RSpec.describe Spree::Admin::ReviewsController, type: :controller do
       get :show, params: { id: review.to_param }
 
       expect(response).to be_successful
-      expect(response.body).to include('Needs review')
       expect(response.body).to include('Soft fabric and clean stitching.')
       expect(response.body).to include('Jacqueline Brown')
       expect(response.body).to include(admin_user_path(review_user))

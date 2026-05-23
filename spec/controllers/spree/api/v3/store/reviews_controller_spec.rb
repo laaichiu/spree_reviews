@@ -116,7 +116,6 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
           variant_id: review_variant.prefixed_id,
           order_id: review_order.prefixed_id,
           rating: 5,
-          title: 'Love it',
           body: 'The fabric is excellent and the fit is right.',
           reviewer_name: 'Julie M.',
           answers: { overall_fit: 'true_to_size' },
@@ -131,6 +130,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       expect(review.variant).to eq(review_variant)
       expect(review.order).to eq(review_order)
       expect(review.verified_purchase).to be(true)
+      expect(review.title).to eq('')
       expect(review.answers.first.option).to eq(true_to_size)
       expect(review.review_media.first.attachment).to be_attached
       expect(json_response['media'].first['alt']).to eq('Fit photo')
@@ -147,7 +147,6 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
         variant_id: review_variant.prefixed_id,
         order_id: review_order.prefixed_id,
         rating: 5,
-        title: 'Love it',
         body: 'The fabric is excellent and the fit is right.',
         reviewer_name: 'Leaked Full Name'
       }
@@ -155,6 +154,27 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       expect(response).to have_http_status(:created)
       expect(Spree::Review.last.reviewer_name).to eq('Jacqueline Brown')
       expect(json_response['reviewer_display_name']).to eq('Jacqueline B.')
+    end
+
+    it 'creates a review with only a rating' do
+      fit_question
+
+      expect {
+        post :create, params: {
+          product_id: product.prefixed_id,
+          variant_id: review_variant.prefixed_id,
+          order_id: review_order.prefixed_id,
+          rating: 4
+        }
+      }.to change(Spree::Review, :count).by(1)
+
+      review = Spree::Review.last
+      expect(response).to have_http_status(:created)
+      expect(review.title).to eq('')
+      expect(review.body).to eq('')
+      expect(review.answers).to be_empty
+      expect(json_response['title']).to eq('')
+      expect(json_response['body']).to eq('')
     end
 
     it 'allows the same customer to review a different purchased variant of the same product' do
@@ -169,7 +189,6 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
           variant_id: other_variant.prefixed_id,
           order_id: other_order.prefixed_id,
           rating: 4,
-          title: 'Different size',
           body: 'This size also worked.'
         }
       }.to change(Spree::Review, :count).by(1)
@@ -190,7 +209,6 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
           variant_id: review_variant.prefixed_id,
           order_id: later_order.prefixed_id,
           rating: 4,
-          title: 'Second order',
           body: 'Still a good fit on the reorder.'
         }
       }.to change(Spree::Review, :count).by(1)
@@ -199,20 +217,17 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       expect(Spree::Review.last.order).to eq(later_order)
     end
 
-    it 'returns validation errors for missing required answers' do
+    it 'does not require configured review questions' do
       fit_question
 
       post :create, params: {
         product_id: product.prefixed_id,
         order_id: review_order.prefixed_id,
-        rating: 5,
-        title: 'Love it',
-        body: 'The fabric is excellent.'
+        rating: 5
       }
 
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(json_response['error']['code']).to eq('validation_error')
-      expect(json_response['error']['details']['answers']).to be_present
+      expect(response).to have_http_status(:created)
+      expect(Spree::Review.last.answers).to be_empty
     end
 
     it 'requires authentication' do
@@ -221,9 +236,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       expect {
         post :create, params: {
           product_id: product.prefixed_id,
-          rating: 5,
-          title: 'Love it',
-          body: 'The fabric is excellent.'
+          rating: 5
         }
       }.not_to change(Spree::Review, :count)
 
@@ -237,9 +250,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       expect {
         post :create, params: {
           product_id: other_product.prefixed_id,
-          rating: 5,
-          title: 'Love it',
-          body: 'The fabric is excellent.'
+          rating: 5
         }
       }.not_to change(Spree::Review, :count)
 
@@ -255,9 +266,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
         post :create, params: {
           product_id: product.prefixed_id,
           order_id: review_order.prefixed_id,
-          rating: 4,
-          title: 'Still good',
-          body: 'I still like it.'
+          rating: 4
         }
       }.not_to change(Spree::Review, :count)
 

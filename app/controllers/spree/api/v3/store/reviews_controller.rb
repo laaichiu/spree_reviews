@@ -100,8 +100,6 @@ module Spree
 
               build_answers_for_question(review, question, answer_payload)
             end
-
-            validate_required_answers(review)
           end
 
           def assign_media(review)
@@ -182,15 +180,6 @@ module Spree
             return options.find { |option| option.prefixed_id == option_id } if option_id.present?
 
             options.find { |option| option.value == value.to_s }
-          end
-
-          def validate_required_answers(review)
-            answered_question_ids = review.answers.map(&:review_question_id).compact
-            required_questions = Spree::ReviewQuestion.for_product(@product, store: current_store).where(required: true)
-
-            required_questions.each do |question|
-              review.errors.add(:answers, :blank) unless answered_question_ids.include?(question.id)
-            end
           end
 
           def answer_filters

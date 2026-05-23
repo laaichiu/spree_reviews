@@ -31,7 +31,9 @@ module Spree
     accepts_nested_attributes_for :review_media, allow_destroy: true
     accepts_nested_attributes_for :answers, allow_destroy: true
 
-    validates :product, :store, :title, :body, presence: true
+    before_validation :normalize_optional_text_fields
+
+    validates :product, :store, presence: true
     validates :status, presence: true, inclusion: { in: STATUSES }
     validates :verified_purchase, inclusion: { in: [true, false] }
     validates :user_id, uniqueness: { scope: [:store_id, :order_id, :product_id, :variant_id], allow_nil: true }
@@ -181,6 +183,17 @@ module Spree
       self.class.admin_reviewer_name_from_user(user) || reviewer_name.presence || Spree.t(:anonymous)
     end
 
+    def admin_display_name
+      "Review #{prefixed_id || id || ''}".squish
+    end
+
+    def body_excerpt(length: 100)
+      body_text = body.to_s.squish
+      return 'No written review' if body_text.blank?
+
+      body_text.truncate(length)
+    end
+
     def current_vote_for(user: nil, ip_address: nil)
       if user.present?
         votes.find_by(user: user)&.vote
@@ -198,6 +211,11 @@ module Spree
     end
 
     private
+
+    def normalize_optional_text_fields
+      self.title = title.to_s.squish
+      self.body = body.to_s.strip
+    end
 
     def product_belongs_to_store
       return if product.blank? || store.blank?

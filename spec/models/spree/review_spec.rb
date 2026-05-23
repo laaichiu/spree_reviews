@@ -5,13 +5,20 @@ RSpec.describe Spree::Review, type: :model do
   let(:product) { create(:product, stores: [store]) }
 
   describe 'defaults' do
-    it 'starts pending with zero vote counters' do
-      review = described_class.new(product: product, store: store, rating: 5, title: 'Great', body: 'Loved it')
+    it 'starts pending with zero vote counters and optional text fields' do
+      review = described_class.new(product: product, store: store, rating: 5)
 
+      expect(review).to be_valid
       expect(review.status).to eq('pending')
       expect(review.verified_purchase).to be(false)
       expect(review.helpful_count).to eq(0)
       expect(review.not_helpful_count).to eq(0)
+
+      review.validate
+
+      expect(review.title).to eq('')
+      expect(review.body).to eq('')
+      expect(review.body_excerpt).to eq('No written review')
     end
   end
 
