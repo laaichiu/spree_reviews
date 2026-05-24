@@ -8,7 +8,10 @@ module Spree
             return render_invalid_content_type unless allowed_content_type?
             return render_invalid_byte_size unless allowed_byte_size?
 
-            blob = ActiveStorage::Blob.create_before_direct_upload!(**blob_params)
+            blob = ActiveStorage::Blob.create_before_direct_upload!(
+              **blob_params,
+              service_name: Spree.public_storage_service_name
+            )
 
             render json: {
               direct_upload: {
