@@ -4,6 +4,7 @@ module Spree
       class ReviewSerializer < BaseSerializer
         typelize product_id: :string,
                  variant_id: [:string, nullable: true],
+                 purchased_option_values: [:string, multi: true],
                  rating: :number,
                  title: :string,
                  body: :string,
@@ -30,6 +31,20 @@ module Spree
           review.variant&.prefixed_id
         end
 
+        attribute :purchased_option_values do |review|
+          variant = review.variant
+
+          if variant.present?
+            variant.option_values.
+              sort_by { |option_value| option_value_order(option_value) }.
+              filter_map do |option_value|
+                option_value.label.presence || option_value.name.presence
+              end
+          else
+            []
+          end
+        end
+
         attribute :reviewer_display_name do |review|
           review.reviewer_display_name
         end
@@ -44,6 +59,16 @@ module Spree
 
         many :answers,
              resource: Spree::Api::V3::ReviewAnswerSerializer
+
+        private
+
+        def option_value_order(option_value)
+          [
+            option_value.option_type&.position || 0,
+            option_value.position || 0,
+            option_value.id || 0
+          ]
+        end
       end
     end
   end

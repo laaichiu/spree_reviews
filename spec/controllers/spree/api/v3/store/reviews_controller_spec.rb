@@ -73,6 +73,45 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       )
     end
 
+    it 'returns purchased option values for variant reviews' do
+      color_type = create(:option_type, :color, position: 1)
+      size_type = create(:option_type, :size, position: 2)
+      white = create(
+        :option_value,
+        option_type: color_type,
+        name: 'white',
+        presentation: 'White',
+        position: 1
+      )
+      size = create(
+        :option_value,
+        option_type: size_type,
+        name: 'size_7_5',
+        presentation: '7.5',
+        position: 1
+      )
+      variant = create(
+        :reviewable_variant,
+        product: product,
+        option_values: [size, white]
+      )
+      review = create(
+        :review,
+        :approved,
+        product: product,
+        variant: variant,
+        store: store
+      )
+
+      get :index, params: { product_id: product.prefixed_id }
+
+      payload = json_response['data'].find do |item|
+        item['id'] == review.prefixed_id
+      end
+      expect(response).to have_http_status(:ok)
+      expect(payload['purchased_option_values']).to eq(['White', '7.5'])
+    end
+
     it 'filters by rating and configured answer values' do
       get :index, params: {
         product_id: product.prefixed_id,

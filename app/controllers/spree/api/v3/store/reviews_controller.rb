@@ -52,7 +52,12 @@ module Spree
 
           def filtered_reviews
             reviews = @product.reviews.approved.for_store(current_store).
-                      includes(:user, review_media: { attachment_attachment: :blob }, answers: [:question, :option])
+                      includes(
+                        :user,
+                        { variant: { option_values: :option_type } },
+                        review_media: { attachment_attachment: :blob },
+                        answers: [:question, :option]
+                      )
             reviews = apply_rating_filter(reviews)
             reviews = reviews.with_images if truthy_param?(params[:with_images])
             reviews = reviews.verified_purchase if truthy_param?(params[:verified_purchase])
