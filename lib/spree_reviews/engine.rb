@@ -36,7 +36,7 @@ module SpreeReviews
       end
     end
 
-    initializer 'spree_reviews.subscribers', after: :load_config_initializers do
+    config.after_initialize do
       require_dependency root.join('app/subscribers/spree/review_purchase_subscriber').to_s
 
       unless Spree.subscribers.include?(Spree::ReviewPurchaseSubscriber)
