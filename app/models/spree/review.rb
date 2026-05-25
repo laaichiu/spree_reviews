@@ -198,7 +198,7 @@ module Spree
 
     def body_excerpt(length: BODY_EXCERPT_LENGTH)
       body_text = body.to_s.squish
-      return 'No written review' if body_text.blank?
+      return 'No written review content' if body_text.blank?
 
       body_text.truncate(length)
     end

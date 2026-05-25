@@ -18,7 +18,7 @@ RSpec.describe Spree::Review, type: :model do
 
       expect(review.title).to eq('Great fit')
       expect(review.body).to eq('')
-      expect(review.body_excerpt).to eq('No written review')
+      expect(review.body_excerpt).to eq('No written review content')
     end
   end
 
