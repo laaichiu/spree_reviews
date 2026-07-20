@@ -246,7 +246,7 @@ module Spree
 
     def product_belongs_to_store
       return if product.blank? || store.blank?
-      return if product.stores.exists?(id: store.id)
+      return if Spree::Product.for_store(store).where(id: product.id).exists?
 
       errors.add(:product, :invalid)
     end

@@ -28,6 +28,24 @@ RSpec.describe Spree::ReviewQuestion, type: :model do
       expect(question.errors[:product]).to be_present
     end
 
+    it 'accepts a product target owned by the question store' do
+      question = build(:review_question, store: store, applies_to: 'product', product: product)
+
+      expect(question).to be_valid
+    end
+
+    it 'rejects a product target owned by another store' do
+      question = build(
+        :review_question,
+        store: create(:store),
+        applies_to: 'product',
+        product: product
+      )
+
+      expect(question).not_to be_valid
+      expect(question.errors[:product]).to be_present
+    end
+
     it 'rejects product targets on store-scoped questions' do
       question = build(:review_question, store: store, applies_to: 'store', product: product)
 

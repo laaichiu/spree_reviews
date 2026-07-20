@@ -87,7 +87,7 @@ module Spree
     def target_belongs_to_store
       return if store.blank?
 
-      if product.present? && !product.stores.exists?(id: store.id)
+      if product.present? && !Spree::Product.for_store(store).where(id: product.id).exists?
         errors.add(:product, :invalid)
       end
 
