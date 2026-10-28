@@ -136,8 +136,17 @@ RSpec.describe Spree::Review, type: :model do
 
       expect(duplicate).not_to be_valid
       expect(duplicate.errors[:customer_id]).to be_present
-      expect(other_variant_review).to be_valid
-      expect(repeat_order_review).to be_valid
+      expect { other_variant_review.save! }.not_to raise_error
+      expect { repeat_order_review.save! }.not_to raise_error
+    end
+
+    it 'enforces uniqueness for product-level reviews at the database boundary' do
+      customer = create(:customer)
+      order = create(:shipped_order, customer: customer, store: store, variants: [product.default_variant])
+      review = create(:review, product: product, order: order, store: store, customer: customer)
+      duplicate = review.dup
+
+      expect { duplicate.save!(validate: false) }.to raise_error(ActiveRecord::RecordNotUnique)
     end
 
     it 'requires the variant to belong to the reviewed product' do
