@@ -36,7 +36,7 @@ en:
     permissions_catalog:
       resources:
         reviews:
-          label: Reviews
           description: Manage product reviews and review questions.
+          label: Reviews
     review_questions: Review Questions
     reviews: Reviews
