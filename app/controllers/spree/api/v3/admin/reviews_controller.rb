@@ -54,7 +54,7 @@ module Spree
           def permitted_params
             normalized = normalize_params(
               params.permit(
-                :rating, :title, :body, :status, :verified_purchase,
+                :rating, :title, :body, :status,
                 :reviewer_name, :locale, :ip_address,
                 metadata: {}, public_metadata: {},
                 review_media: [

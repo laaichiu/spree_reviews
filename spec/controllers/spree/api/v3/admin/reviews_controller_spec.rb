@@ -96,7 +96,7 @@ RSpec.describe Spree::Api::V3::Admin::ReviewsController, type: :controller do
       expect(review.reload).to have_attributes(
         title: 'Reviewed title',
         status: 'approved',
-        verified_purchase: true
+        verified_purchase: false
       )
       expect(review.metadata).to eq('moderation' => 'approved')
     end
