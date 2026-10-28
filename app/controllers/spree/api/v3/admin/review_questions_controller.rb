@@ -7,6 +7,10 @@ module Spree
 
           protected
 
+          def resource_scope
+            model_class.for_store(current_store)
+          end
+
           def model_class
             Spree::ReviewQuestion
           end

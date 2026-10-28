@@ -56,7 +56,7 @@ module Spree
               params.permit(
                 :rating, :title, :body, :status, :verified_purchase,
                 :reviewer_name, :locale, :ip_address,
-                metadata: {}, public_metadata: {}, private_metadata: {},
+                metadata: {}, public_metadata: {},
                 review_media: [
                   :id, :alt, :position, :_destroy
                 ],

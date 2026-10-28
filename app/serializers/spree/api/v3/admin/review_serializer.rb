@@ -9,10 +9,9 @@ module Spree
                    reviewer_name: [:string, nullable: true],
                    ip_address: [:string, nullable: true],
                    metadata: 'Record<string, unknown>',
-                   public_metadata: 'Record<string, unknown>',
-                   private_metadata: 'Record<string, unknown>'
+                   public_metadata: 'Record<string, unknown>'
 
-          attributes :reviewer_name, :ip_address, :metadata, :public_metadata, :private_metadata,
+          attributes :reviewer_name, :ip_address, :metadata, :public_metadata,
                      created_at: :iso8601, updated_at: :iso8601
 
           attribute :store_id do |review|
