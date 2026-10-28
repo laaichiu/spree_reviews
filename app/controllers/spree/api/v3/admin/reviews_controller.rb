@@ -39,7 +39,7 @@ module Spree
               :variant,
               :order,
               :store,
-              :user,
+              :customer,
               review_media: { attachment_attachment: :blob },
               answers: [:question, :option]
             ]

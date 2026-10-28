@@ -7,7 +7,7 @@ RSpec.describe Spree::ReviewPurchaseSubscriber do
   let(:variant) { product.default_variant }
   let(:order) { create(:shipped_order, customer: customer, store: store, variants: [variant]) }
   let!(:review) do
-    create(:review, :verified_purchase, product: product, variant: variant, order: order, store: store, user: customer)
+    create(:review, :verified_purchase, product: product, variant: variant, order: order, store: store, customer: customer)
   end
 
   it 'refreshes reviews on a received return' do

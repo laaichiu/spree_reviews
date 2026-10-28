@@ -5,7 +5,7 @@ module Spree
     VOTES = %w[helpful not_helpful].freeze
 
     belongs_to :review, class_name: 'Spree::Review', inverse_of: :votes, touch: true
-    belongs_to :user, class_name: Spree.customer_class.to_s, optional: true
+    belongs_to :customer, class_name: Spree.customer_class.to_s, optional: true
 
     validates :review, :vote, presence: true
     validates :vote, inclusion: { in: VOTES }
@@ -20,7 +20,7 @@ module Spree
     private
 
     def user_or_ip_address_present
-      return if user_id.present? || ip_address.present?
+      return if customer_id.present? || ip_address.present?
 
       errors.add(:base, :blank)
     end
@@ -30,8 +30,8 @@ module Spree
 
       existing = self.class.where(review_id: review_id)
       existing = existing.where.not(id: id) if persisted?
-      existing = if user_id.present?
-                   existing.where(user_id: user_id)
+      existing = if customer_id.present?
+                   existing.where(customer_id: customer_id)
                  else
                    existing.where(ip_address: ip_address)
                  end

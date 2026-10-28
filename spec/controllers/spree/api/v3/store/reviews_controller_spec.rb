@@ -52,7 +52,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
         variant: variant,
         order: first_order,
         store: store,
-        user: reviewer
+        customer: reviewer
       )
       second_review = create(
         :review,
@@ -62,7 +62,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
         variant: variant,
         order: second_order,
         store: store,
-        user: reviewer
+        customer: reviewer
       )
 
       get :index, params: { product_id: product.prefixed_id }
@@ -165,7 +165,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       review = Spree::Review.last
       expect(response).to have_http_status(:created)
       expect(review.status).to eq('pending')
-      expect(review.user).to eq(user)
+      expect(review.customer).to eq(user)
       expect(review.variant).to eq(review_variant)
       expect(review.order).to eq(review_order)
       expect(review.verified_purchase).to be(true)
@@ -173,6 +173,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       expect(review.answers.first.option).to eq(true_to_size)
       expect(review.review_media.first.attachment).to be_attached
       expect(json_response['media'].first['alt']).to eq('Fit photo')
+      expect(json_response).not_to have_key('customer_id')
       expect(json_response).not_to have_key('user_id')
       expect(json_response).not_to have_key('order_id')
       expect(json_response).not_to have_key('reviewer_name')
@@ -251,7 +252,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       other_variant = create(:reviewable_variant, product: product)
       other_order = create(:shipped_order, customer: user, store: store, variants: [other_variant])
 
-      create(:review, :for_variant, product: product, variant: review_variant, order: review_order, store: store, user: user)
+      create(:review, :for_variant, product: product, variant: review_variant, order: review_order, store: store, customer: user)
 
       expect {
         post :create, params: {
@@ -272,7 +273,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
     it 'allows the same customer to review the same variant from a different shipped order' do
       later_order = create(:shipped_order, customer: user, store: store, variants: [review_variant])
 
-      create(:review, :for_variant, product: product, variant: review_variant, order: review_order, store: store, user: user)
+      create(:review, :for_variant, product: product, variant: review_variant, order: review_order, store: store, customer: user)
 
       expect {
         post :create, params: {
@@ -367,7 +368,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
     end
 
     it 'rejects duplicate customer reviews for the same order product variant' do
-      existing_review = create(:review, product: product, order: review_order, store: store, user: user)
+      existing_review = create(:review, product: product, order: review_order, store: store, customer: user)
 
       expect {
         post :create, params: {

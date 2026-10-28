@@ -55,7 +55,7 @@ RSpec.describe Spree::Review, type: :model do
 
     it 'uses the current profile name for associated users while keeping public display private' do
       user = create(:user, first_name: 'Jacqueline', last_name: 'Brown')
-      review = create(:review, product: product, store: store, user: user, reviewer_name: 'Old Name')
+      review = create(:review, product: product, store: store, customer: user, reviewer_name: 'Old Name')
 
       expect(review.admin_reviewer_name).to eq('Jacqueline Brown')
       expect(review.reviewer_display_name).to eq('Jacqueline B.')
@@ -128,14 +128,14 @@ RSpec.describe Spree::Review, type: :model do
       other_variant = create(:reviewable_variant, product: product)
       order = create(:shipped_order, customer: user, store: store, variants: [variant, other_variant])
       repeat_order = create(:shipped_order, customer: user, store: store, variants: [variant])
-      create(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
+      create(:review, :for_variant, product: product, variant: variant, order: order, store: store, customer: user)
 
-      duplicate = build(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
-      other_variant_review = build(:review, :for_variant, product: product, variant: other_variant, order: order, store: store, user: user)
-      repeat_order_review = build(:review, :for_variant, product: product, variant: variant, order: repeat_order, store: store, user: user)
+      duplicate = build(:review, :for_variant, product: product, variant: variant, order: order, store: store, customer: user)
+      other_variant_review = build(:review, :for_variant, product: product, variant: other_variant, order: order, store: store, customer: user)
+      repeat_order_review = build(:review, :for_variant, product: product, variant: variant, order: repeat_order, store: store, customer: user)
 
       expect(duplicate).not_to be_valid
-      expect(duplicate.errors[:user_id]).to be_present
+      expect(duplicate.errors[:customer_id]).to be_present
       expect(other_variant_review).to be_valid
       expect(repeat_order_review).to be_valid
     end
@@ -154,7 +154,7 @@ RSpec.describe Spree::Review, type: :model do
       other_variant = create(:reviewable_variant, product: product)
       order = create(:shipped_order, customer: user, store: store, variants: [other_variant])
 
-      review = build(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
+      review = build(:review, :for_variant, product: product, variant: variant, order: order, store: store, customer: user)
 
       expect(review).not_to be_valid
       expect(review.errors[:order]).to be_present
@@ -166,7 +166,7 @@ RSpec.describe Spree::Review, type: :model do
       order = create(:shipped_order, customer: user, store: store, variants: [variant])
       create_received_return_item(order: order, variant: variant)
 
-      review = build(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
+      review = build(:review, :for_variant, product: product, variant: variant, order: order, store: store, customer: user)
 
       expect(review).not_to be_valid
       expect(review.errors[:order]).to be_present
@@ -176,7 +176,7 @@ RSpec.describe Spree::Review, type: :model do
       user = create(:user)
       variant = create(:reviewable_variant, product: product)
       order = create(:shipped_order, customer: user, store: store, variants: [variant])
-      review = create(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
+      review = create(:review, :for_variant, product: product, variant: variant, order: order, store: store, customer: user)
       create_received_return_item(order: order, variant: variant)
 
       review.status = 'approved'
@@ -189,7 +189,7 @@ RSpec.describe Spree::Review, type: :model do
     it 'returns the persisted order when present' do
       user = create(:user)
       order = create(:shipped_order, customer: user, store: store, variants: [product.default_variant])
-      review = create(:review, product: product, store: store, user: user, order: order)
+      review = create(:review, product: product, store: store, customer: user, order: order)
 
       expect(review.attributed_order).to eq(order)
     end
@@ -202,7 +202,7 @@ RSpec.describe Spree::Review, type: :model do
         :review,
         product: product,
         store: store,
-        user: user,
+        customer: user,
         order: nil,
         variant: nil,
         created_at: 1.day.ago,

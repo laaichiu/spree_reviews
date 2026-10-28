@@ -3,7 +3,7 @@ module Spree
     Target = Struct.new(:order, :variant, keyword_init: true)
 
     def self.backfill_scope
-      Spree::Review.where.not(user_id: nil).where('order_id IS NULL OR variant_id IS NULL')
+      Spree::Review.where.not(customer_id: nil).where('order_id IS NULL OR variant_id IS NULL')
     end
 
     def initialize(review)
@@ -33,7 +33,7 @@ module Spree
     attr_reader :review
 
     def attributable?
-      review.user_id.present? && review.product_id.present? && review.store_id.present?
+      review.customer_id.present? && review.product_id.present? && review.store_id.present?
     end
 
     def target_order_and_variant
@@ -49,7 +49,7 @@ module Spree
 
     def candidate_orders
       orders = Spree::Order.complete.
-               where(customer_id: review.user_id, store_id: review.store_id).
+               where(customer_id: review.customer_id, store_id: review.store_id).
                where.not(status: 'canceled').
                joins(line_items: :variant).
                merge(candidate_variant_scope).
@@ -86,7 +86,7 @@ module Spree
 
     def duplicate_review_exists?(order, variant)
       reviews = Spree::Review.
-                where(store_id: review.store_id, order_id: order.id, product_id: review.product_id, user_id: review.user_id).
+                where(store_id: review.store_id, order_id: order.id, product_id: review.product_id, customer_id: review.customer_id).
                 where.not(id: review.id)
 
       if variant.present?

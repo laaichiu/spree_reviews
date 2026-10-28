@@ -54,7 +54,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewEligibilitiesController, type: :cont
       request.headers['Authorization'] = "Bearer #{jwt_token}"
       order = create(:shipped_order, customer: user, store: store, variants: [product.default_variant])
 
-      review = create(:review, product: product, order: order, store: store, user: user)
+      review = create(:review, product: product, order: order, store: store, customer: user)
 
       get :show, params: { product_id: product.prefixed_id, order_id: order.prefixed_id }
 
@@ -70,7 +70,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewEligibilitiesController, type: :cont
       variant = create(:reviewable_variant, product: product)
       order = create(:shipped_order, customer: user, store: store, variants: [variant])
 
-      review = create(:review, product: product, order: nil, variant: nil, store: store, user: user)
+      review = create(:review, product: product, order: nil, variant: nil, store: store, customer: user)
 
       get :show, params: { product_id: product.prefixed_id, variant_id: variant.prefixed_id, order_id: order.prefixed_id }
 
@@ -94,7 +94,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewEligibilitiesController, type: :cont
         order: nil,
         variant: nil,
         store: store,
-        user: user,
+        customer: user,
         created_at: 2.days.ago,
         updated_at: 2.days.ago
       )
@@ -119,7 +119,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewEligibilitiesController, type: :cont
       reviewed_order = create(:shipped_order, customer: user, store: store, variants: [variant])
 
 
-      create(:review, :for_variant, product: product, variant: variant, order: reviewed_order, store: store, user: user)
+      create(:review, :for_variant, product: product, variant: variant, order: reviewed_order, store: store, customer: user)
 
       get :show, params: { product_id: product.prefixed_id, variant_id: other_variant.prefixed_id, order_id: order.prefixed_id }
 
@@ -136,7 +136,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewEligibilitiesController, type: :cont
       new_order = create(:shipped_order, customer: user, store: store, variants: [variant])
 
 
-      create(:review, :for_variant, product: product, variant: variant, order: reviewed_order, store: store, user: user)
+      create(:review, :for_variant, product: product, variant: variant, order: reviewed_order, store: store, customer: user)
 
       get :show, params: { product_id: product.prefixed_id, variant_id: variant.prefixed_id, order_id: new_order.prefixed_id }
 

@@ -13,7 +13,7 @@ RSpec.describe Spree::Api::V3::Admin::ReviewsController, type: :controller do
       :review,
       product: product,
       store: store,
-      user: review_user,
+      customer: review_user,
       title: 'Needs review',
       status: 'pending',
       reviewer_name: 'Old Public Name',
@@ -53,7 +53,7 @@ RSpec.describe Spree::Api::V3::Admin::ReviewsController, type: :controller do
       expect(json_response['id']).to eq(review.prefixed_id)
       expect(json_response['metadata']).to eq('moderation' => 'queued')
       expect(json_response['product_id']).to eq(product.prefixed_id)
-      expect(json_response).to have_key('user_id')
+      expect(json_response).to have_key('customer_id')
       expect(json_response).to have_key('order_id')
       expect(json_response['reviewer_name']).to eq('Jacqueline Brown')
     end

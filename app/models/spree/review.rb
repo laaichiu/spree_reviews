@@ -15,17 +15,17 @@ module Spree
     attribute :not_helpful_count, :integer, default: 0
 
     self.whitelisted_ransackable_attributes = %w[
-      product_id variant_id order_id store_id user_id rating status verified_purchase
+      product_id variant_id order_id store_id customer_id rating status verified_purchase
       reviewer_name title body locale helpful_count not_helpful_count
       created_at updated_at
     ]
-    self.whitelisted_ransackable_associations = %w[product variant order store user answers review_media votes]
+    self.whitelisted_ransackable_associations = %w[product variant order store customer answers review_media votes]
 
     belongs_to :product, class_name: 'Spree::Product', inverse_of: :reviews, touch: true
     belongs_to :variant, class_name: 'Spree::Variant', optional: true
     belongs_to :order, class_name: 'Spree::Order', optional: true
     belongs_to :store, class_name: 'Spree::Store'
-    belongs_to :user, class_name: Spree.customer_class.to_s, optional: true
+    belongs_to :customer, class_name: Spree.customer_class.to_s, optional: true
 
     has_many :review_media, class_name: 'Spree::ReviewMedia', dependent: :destroy, inverse_of: :review
     has_many :answers, class_name: 'Spree::ReviewAnswer', dependent: :destroy, inverse_of: :review
@@ -41,7 +41,7 @@ module Spree
     validates :verified_purchase, inclusion: { in: [true, false] }
     validates :title, presence: true, if: :title_required?
     validates :title, length: { maximum: TITLE_MAX_LENGTH }, if: :title_length_validation_required?
-    validates :user_id, uniqueness: { scope: [:store_id, :order_id, :product_id, :variant_id], allow_nil: true }
+    validates :customer_id, uniqueness: { scope: [:store_id, :order_id, :product_id, :variant_id], allow_nil: true }
     validates :rating, numericality: {
       only_integer: true,
       greater_than_or_equal_to: 1,
@@ -49,7 +49,7 @@ module Spree
     }
     validate :product_belongs_to_store
     validate :variant_belongs_to_product
-    validate :order_belongs_to_store_and_user
+    validate :order_belongs_to_store_and_customer
     validate :order_contains_reviewed_item
     validate :review_media_count_within_limit
 
@@ -179,13 +179,13 @@ module Spree
 
     def reviewer_display_name
       self.class.public_reviewer_name(
-        self.class.profile_reviewer_name_from_user(user) || reviewer_name.presence
+        self.class.profile_reviewer_name_from_user(customer) || reviewer_name.presence
       ) ||
         Spree.t(:anonymous)
     end
 
     def admin_reviewer_name
-      self.class.admin_reviewer_name_from_user(user) || reviewer_name.presence || Spree.t(:anonymous)
+      self.class.admin_reviewer_name_from_user(customer) || reviewer_name.presence || Spree.t(:anonymous)
     end
 
     def admin_display_name
@@ -207,9 +207,9 @@ module Spree
       order || purchase_attribution_target&.order
     end
 
-    def current_vote_for(user: nil, ip_address: nil)
-      if user.present?
-        votes.find_by(user: user)&.vote
+    def current_vote_for(customer: nil, ip_address: nil)
+      if customer.present?
+        votes.find_by(customer: customer)&.vote
       elsif ip_address.present?
         votes.find_by(ip_address: ip_address)&.vote
       end
@@ -258,11 +258,11 @@ module Spree
       errors.add(:variant, :invalid)
     end
 
-    def order_belongs_to_store_and_user
+    def order_belongs_to_store_and_customer
       return if order.blank?
 
       errors.add(:order, :invalid) if store.present? && order.store_id != store.id
-      errors.add(:order, :invalid) if user.present? && order.customer_id != user.id
+      errors.add(:order, :invalid) if customer.present? && order.customer_id != customer.id
     end
 
     def order_contains_reviewed_item

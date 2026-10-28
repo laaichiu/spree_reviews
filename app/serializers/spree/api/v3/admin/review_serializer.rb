@@ -4,7 +4,7 @@ module Spree
       module Admin
         class ReviewSerializer < V3::ReviewSerializer
           typelize store_id: :string,
-                   user_id: [:string, nullable: true],
+                   customer_id: [:string, nullable: true],
                    order_id: [:string, nullable: true],
                    reviewer_name: [:string, nullable: true],
                    ip_address: [:string, nullable: true],
@@ -18,8 +18,8 @@ module Spree
             review.store.prefixed_id
           end
 
-          attribute :user_id do |review|
-            review.user&.prefixed_id
+          attribute :customer_id do |review|
+            review.customer&.prefixed_id
           end
 
           attribute :order_id do |review|

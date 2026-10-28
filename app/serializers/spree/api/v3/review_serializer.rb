@@ -50,7 +50,7 @@ module Spree
         end
 
         attribute :current_vote do |review|
-          review.current_vote_for(user: current_user, ip_address: params[:ip_address])
+          review.current_vote_for(customer: current_user, ip_address: params[:ip_address])
         end
 
         many :review_media,

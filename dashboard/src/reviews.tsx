@@ -287,11 +287,11 @@ function ReviewEditor({ review, storeId }: { review: Review; storeId: string }) 
               <div>
                 <dt className="text-muted-foreground">Customer</dt>
                 <dd>
-                  {review.user_id ? (
+                  {review.customer_id ? (
                     <AppLink
                       className="hover:underline"
                       storeId={storeId}
-                      path={`customers/${review.user_id}`}
+                      path={`customers/${review.customer_id}`}
                     >
                       {review.reviewer_name || 'Customer'}
                     </AppLink>

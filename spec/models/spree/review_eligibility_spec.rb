@@ -5,10 +5,10 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
   let(:product) { create(:product, store: store) }
   let(:user) { create(:user) }
 
-  subject(:eligibility) { described_class.new(product: product, store: store, user: user) }
+  subject(:eligibility) { described_class.new(product: product, store: store, customer: user) }
 
   it 'requires authentication' do
-    eligibility = described_class.new(product: product, store: store, user: nil)
+    eligibility = described_class.new(product: product, store: store, customer: nil)
 
     expect(eligibility).not_to be_can_review
     expect(eligibility.reason).to eq('login_required')
@@ -35,7 +35,7 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
   it 'does not allow duplicate reviews by the same customer for the product' do
     order = create(:shipped_order, customer: user, store: store, variants: [product.default_variant])
 
-    review = create(:review, product: product, order: order, store: store, user: user)
+    review = create(:review, product: product, order: order, store: store, customer: user)
 
     expect(eligibility).not_to be_can_review
     expect(eligibility.reason).to eq('already_reviewed')
@@ -49,9 +49,9 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
     reviewed_order = create(:shipped_order, customer: user, store: store, variants: [variant])
 
 
-    create(:review, :for_variant, product: product, variant: variant, order: reviewed_order, store: store, user: user)
+    create(:review, :for_variant, product: product, variant: variant, order: reviewed_order, store: store, customer: user)
 
-    eligibility = described_class.new(product: product, store: store, user: user, variant: other_variant, order: order)
+    eligibility = described_class.new(product: product, store: store, customer: user, variant: other_variant, order: order)
 
     expect(eligibility).to be_can_review
     expect(eligibility.existing_review).to be_nil
@@ -61,9 +61,9 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
     variant = create(:reviewable_variant, product: product)
     order = create(:shipped_order, customer: user, store: store, variants: [variant])
 
-    review = create(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
+    review = create(:review, :for_variant, product: product, variant: variant, order: order, store: store, customer: user)
 
-    eligibility = described_class.new(product: product, store: store, user: user, variant: variant, order: order)
+    eligibility = described_class.new(product: product, store: store, customer: user, variant: variant, order: order)
 
     expect(eligibility).not_to be_can_review
     expect(eligibility.reason).to eq('already_reviewed')
@@ -74,9 +74,9 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
     variant = create(:reviewable_variant, product: product)
     order = create(:shipped_order, customer: user, store: store, variants: [variant])
 
-    legacy_review = create(:review, product: product, store: store, user: user, order: nil, variant: nil)
+    legacy_review = create(:review, product: product, store: store, customer: user, order: nil, variant: nil)
 
-    eligibility = described_class.new(product: product, store: store, user: user, variant: variant, order: order)
+    eligibility = described_class.new(product: product, store: store, customer: user, variant: variant, order: order)
 
     expect(eligibility).not_to be_can_review
     expect(eligibility.reason).to eq('already_reviewed')
@@ -93,7 +93,7 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
       :review,
       product: product,
       store: store,
-      user: user,
+      customer: user,
       order: nil,
       variant: nil,
       created_at: 2.days.ago,
@@ -103,14 +103,14 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
     earlier_eligibility = described_class.new(
       product: product,
       store: store,
-      user: user,
+      customer: user,
       variant: variant,
       order: earlier_order
     )
     later_eligibility = described_class.new(
       product: product,
       store: store,
-      user: user,
+      customer: user,
       variant: variant,
       order: later_order
     )
@@ -127,9 +127,9 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
     second_order = create(:shipped_order, customer: user, store: store, variants: [variant])
 
 
-    create(:review, :for_variant, product: product, variant: variant, order: first_order, store: store, user: user)
+    create(:review, :for_variant, product: product, variant: variant, order: first_order, store: store, customer: user)
 
-    eligibility = described_class.new(product: product, store: store, user: user, variant: variant, order: second_order)
+    eligibility = described_class.new(product: product, store: store, customer: user, variant: variant, order: second_order)
 
     expect(eligibility).to be_can_review
     expect(eligibility.eligible_order).to eq(second_order)
@@ -142,7 +142,7 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
     order = create(:shipped_order, customer: user, store: store, variants: [other_variant])
 
 
-    eligibility = described_class.new(product: product, store: store, user: user, variant: variant, order: order)
+    eligibility = described_class.new(product: product, store: store, customer: user, variant: variant, order: order)
 
     expect(eligibility).not_to be_can_review
     expect(eligibility.reason).to eq('not_purchased')
@@ -155,7 +155,7 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
 
     create_received_return_item(order: order, variant: variant)
 
-    eligibility = described_class.new(product: product, store: store, user: user, variant: variant, order: order)
+    eligibility = described_class.new(product: product, store: store, customer: user, variant: variant, order: order)
 
     expect(eligibility).not_to be_can_review
     expect(eligibility.reason).to eq('not_purchased')
@@ -169,7 +169,7 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
 
     create_received_return_item(order: order, variant: returned_variant)
 
-    eligibility = described_class.new(product: product, store: store, user: user, variant: kept_variant, order: order)
+    eligibility = described_class.new(product: product, store: store, customer: user, variant: kept_variant, order: order)
 
     expect(eligibility).to be_can_review
     expect(eligibility).to be_verified_purchase

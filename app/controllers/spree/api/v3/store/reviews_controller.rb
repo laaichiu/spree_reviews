@@ -23,7 +23,7 @@ module Spree
             eligibility = Spree::ReviewEligibility.new(
               product: @product,
               store: current_store,
-              user: current_user,
+              customer: current_user,
               variant: review_variant,
               order: review_order
             )
@@ -31,7 +31,7 @@ module Spree
 
             review = @product.reviews.build(review_params)
             review.store = current_store
-            review.user = current_user
+            review.customer = current_user
             review.variant = review_variant
             review.order = eligibility.eligible_order
             review.verified_purchase = true
@@ -53,7 +53,7 @@ module Spree
           def filtered_reviews
             reviews = @product.reviews.approved.for_store(current_store).
                       includes(
-                        :user,
+                        :customer,
                         { variant: { option_values: :option_type } },
                         review_media: { attachment_attachment: :blob },
                         answers: [:question, :option]

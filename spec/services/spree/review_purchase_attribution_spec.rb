@@ -9,7 +9,7 @@ RSpec.describe Spree::ReviewPurchaseAttribution, type: :service do
     variant = create(:reviewable_variant, product: product)
     order = create(:shipped_order, customer: user, store: store, variants: [variant])
 
-    review = create(:review, product: product, store: store, user: user, order: nil, variant: nil)
+    review = create(:review, product: product, store: store, customer: user, order: nil, variant: nil)
 
     expect(described_class.new(review).call).to be(true)
     expect(review.reload.order).to eq(order)
@@ -21,7 +21,7 @@ RSpec.describe Spree::ReviewPurchaseAttribution, type: :service do
     second_variant = create(:reviewable_variant, product: product)
     order = create(:shipped_order, customer: user, store: store, variants: [first_variant, second_variant])
 
-    review = create(:review, product: product, store: store, user: user, order: nil, variant: nil)
+    review = create(:review, product: product, store: store, customer: user, order: nil, variant: nil)
 
     expect(described_class.new(review).call).to be(true)
     expect(review.reload.order).to eq(order)
@@ -32,8 +32,8 @@ RSpec.describe Spree::ReviewPurchaseAttribution, type: :service do
     variant = create(:reviewable_variant, product: product)
     order = create(:shipped_order, customer: user, store: store, variants: [variant])
 
-    create(:review, :for_variant, product: product, store: store, user: user, order: order, variant: variant)
-    review = create(:review, product: product, store: store, user: user, order: nil, variant: nil)
+    create(:review, :for_variant, product: product, store: store, customer: user, order: order, variant: variant)
+    review = create(:review, product: product, store: store, customer: user, order: nil, variant: nil)
 
     expect(described_class.new(review).call).to be(false)
     expect(review.reload.order).to be_nil
@@ -51,7 +51,7 @@ RSpec.describe Spree::ReviewPurchaseAttribution, type: :service do
       :review,
       product: product,
       store: store,
-      user: user,
+      customer: user,
       order: nil,
       variant: nil,
       created_at: 2.days.ago,

@@ -18,7 +18,7 @@ module Spree
             else
               vote ||= @review.votes.build
               vote.assign_attributes(vote: selected_vote)
-              vote.user = current_user if current_user
+              vote.customer = current_user if current_user
               vote.ip_address = request.remote_ip if current_user.blank?
 
               if vote.save
@@ -44,7 +44,7 @@ module Spree
           end
 
           def existing_vote
-            return @review.votes.find_by(user: current_user) if current_user
+            return @review.votes.find_by(customer: current_user) if current_user
 
             @review.votes.find_by(ip_address: request.remote_ip)
           end

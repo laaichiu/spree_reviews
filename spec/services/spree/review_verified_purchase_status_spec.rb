@@ -16,7 +16,7 @@ RSpec.describe Spree::ReviewVerifiedPurchaseStatus, type: :service do
       variant: variant,
       order: order,
       store: store,
-      user: user
+      customer: user
     )
     create_received_return_item(order: order, variant: variant)
 
@@ -39,7 +39,7 @@ RSpec.describe Spree::ReviewVerifiedPurchaseStatus, type: :service do
       variant: variant,
       order: order,
       store: store,
-      user: user
+      customer: user
     )
     create_received_return_item(order: order, variant: variant, quantity: 1)
 
@@ -59,7 +59,7 @@ RSpec.describe Spree::ReviewVerifiedPurchaseStatus, type: :service do
       variant: reviewed_variant,
       order: order,
       store: store,
-      user: user
+      customer: user
     )
     create_received_return_item(order: order, variant: returned_variant)
 
@@ -71,7 +71,7 @@ RSpec.describe Spree::ReviewVerifiedPurchaseStatus, type: :service do
     returned_variant = create(:reviewable_variant, product: product)
     kept_variant = create(:reviewable_variant, product: product)
     order = create(:shipped_order, customer: user, store: store, variants: [returned_variant, kept_variant])
-    review = create(:review, :verified_purchase, product: product, variant: nil, order: order, store: store, user: user)
+    review = create(:review, :verified_purchase, product: product, variant: nil, order: order, store: store, customer: user)
     create_received_return_item(order: order, variant: returned_variant)
 
     expect(described_class.sync_for_order_variant!(order: order, variant: returned_variant)).to eq(0)
@@ -82,7 +82,7 @@ RSpec.describe Spree::ReviewVerifiedPurchaseStatus, type: :service do
     first_variant = create(:reviewable_variant, product: product)
     second_variant = create(:reviewable_variant, product: product)
     order = create(:shipped_order, customer: user, store: store, variants: [first_variant, second_variant])
-    review = create(:review, :verified_purchase, product: product, variant: nil, order: order, store: store, user: user)
+    review = create(:review, :verified_purchase, product: product, variant: nil, order: order, store: store, customer: user)
     create_received_return_item(order: order, variant: first_variant)
     create_received_return_item(order: order, variant: second_variant)
 
@@ -93,7 +93,7 @@ RSpec.describe Spree::ReviewVerifiedPurchaseStatus, type: :service do
   it 'can promote a purchased review that was not previously marked verified' do
     variant = create(:reviewable_variant, product: product)
     order = create(:shipped_order, customer: user, store: store, variants: [variant])
-    review = create(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
+    review = create(:review, :for_variant, product: product, variant: variant, order: order, store: store, customer: user)
 
     expect(described_class.sync!(review)).to be(true)
     expect(review.reload.verified_purchase).to be(true)
@@ -101,8 +101,8 @@ RSpec.describe Spree::ReviewVerifiedPurchaseStatus, type: :service do
   it 'does not verify a review attached to another customer’s order' do
     variant = create(:reviewable_variant, product: product)
     order = create(:shipped_order, customer: user, store: store, variants: [variant])
-    review = create(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
-    review.update_column(:user_id, create(:customer).id)
+    review = create(:review, :for_variant, product: product, variant: variant, order: order, store: store, customer: user)
+    review.update_column(:customer_id, create(:customer).id)
 
     expect(described_class.verified_purchase?(review.reload)).to be(false)
   end

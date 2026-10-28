@@ -3,7 +3,7 @@ module Spree
     attr_reader :review
 
     def self.refresh_scope
-      Spree::Review.where.not(order_id: nil).where.not(user_id: nil)
+      Spree::Review.where.not(order_id: nil).where.not(customer_id: nil)
     end
 
     def self.verified_purchase?(review)
@@ -48,9 +48,9 @@ module Spree
     end
 
     def verified_purchase?
-      return false unless review.user_id.present?
+      return false unless review.customer_id.present?
       return false unless review.order.present? && review.product.present?
-      return false unless review.order.customer_id == review.user_id && review.order.store_id == review.store_id
+      return false unless review.order.customer_id == review.customer_id && review.order.store_id == review.store_id
 
       Spree::ReviewablePurchase.new(
         order: review.order,

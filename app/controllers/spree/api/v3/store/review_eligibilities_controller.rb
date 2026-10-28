@@ -10,7 +10,7 @@ module Spree
             eligibility = Spree::ReviewEligibility.new(
               product: @product,
               store: current_store,
-              user: current_user,
+              customer: current_user,
               variant: review_variant,
               order: review_order
             )

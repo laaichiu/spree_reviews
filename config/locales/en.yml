@@ -4,6 +4,7 @@ en:
     attributes:
       spree/review:
         body: Body
+        customer: Customer
         helpful_count: Helpful count
         locale: Locale
         not_helpful_count: Not helpful count
@@ -12,7 +13,6 @@ en:
         reviewer_name: Reviewer name
         status: Status
         title: Title
-        user: Customer
         variant: Variant
         verified_purchase: Verified purchase
       spree/review_question:

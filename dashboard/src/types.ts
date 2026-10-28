@@ -7,7 +7,7 @@ export interface Review {
   id: string
   product_id: string
   variant_id: string | null
-  user_id: string | null
+  customer_id: string | null
   order_id: string | null
   reviewer_name: string | null
   rating: number

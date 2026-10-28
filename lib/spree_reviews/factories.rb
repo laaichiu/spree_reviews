@@ -138,8 +138,8 @@ FactoryBot.define do
       ip_address { '127.0.0.2' }
     end
 
-    trait :with_user do
-      user
+    trait :with_customer do
+      customer
       ip_address { nil }
     end
   end
