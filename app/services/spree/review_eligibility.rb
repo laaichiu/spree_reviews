@@ -99,12 +99,12 @@ module Spree
     end
 
     def eligible_orders
-      @eligible_orders ||= Spree::Order.complete.shipped.
-        where(user_id: user.id, store_id: store.id).
-        where.not(state: 'canceled').
+      @eligible_orders ||= Spree::Order.complete.
+        where(customer_id: user.id, store_id: store.id).
+        where.not(status: 'canceled').
         joins(line_items: :variant).
         merge(eligible_variant_scope).
-        includes({ inventory_units: { return_items: :reimbursement } }, line_items: :variant).
+        includes({ fulfillment_items: { return_line_items: :return } }, line_items: :variant).
         distinct.
         order(completed_at: :desc, id: :desc).
         to_a.

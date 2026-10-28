@@ -2,7 +2,7 @@ require 'spec_helper'
 
 RSpec.describe Spree::ReviewEligibility, type: :model do
   let(:store) { create(:store) }
-  let(:product) { create(:product, stores: [store]) }
+  let(:product) { create(:product, store: store) }
   let(:user) { create(:user) }
 
   subject(:eligibility) { described_class.new(product: product, store: store, user: user) }
@@ -15,7 +15,7 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
   end
 
   it 'requires a shipped order containing the product' do
-    create(:order_ready_to_ship, user: user, store: store, variants: [product.master])
+    create(:order_ready_to_ship, customer: user, store: store, variants: [product.default_variant])
 
     expect(eligibility).not_to be_can_review
     expect(eligibility.reason).to eq('not_purchased')
@@ -23,8 +23,8 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
   end
 
   it 'allows customers with a shipped order containing the product' do
-    order = create(:shipped_order, user: user, store: store, variants: [product.master])
-    order.update!(shipment_state: 'shipped')
+    order = create(:shipped_order, customer: user, store: store, variants: [product.default_variant])
+
 
     expect(eligibility).to be_can_review
     expect(eligibility.reason).to be_nil
@@ -33,8 +33,8 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
   end
 
   it 'does not allow duplicate reviews by the same customer for the product' do
-    order = create(:shipped_order, user: user, store: store, variants: [product.master])
-    order.update!(shipment_state: 'shipped')
+    order = create(:shipped_order, customer: user, store: store, variants: [product.default_variant])
+
     review = create(:review, product: product, order: order, store: store, user: user)
 
     expect(eligibility).not_to be_can_review
@@ -45,10 +45,10 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
   it 'allows separate reviews for different purchased variants of the same product' do
     variant = create(:reviewable_variant, product: product)
     other_variant = create(:reviewable_variant, product: product)
-    order = create(:shipped_order, user: user, store: store, variants: [other_variant])
-    reviewed_order = create(:shipped_order, user: user, store: store, variants: [variant])
-    order.update!(shipment_state: 'shipped')
-    reviewed_order.update!(shipment_state: 'shipped')
+    order = create(:shipped_order, customer: user, store: store, variants: [other_variant])
+    reviewed_order = create(:shipped_order, customer: user, store: store, variants: [variant])
+
+
     create(:review, :for_variant, product: product, variant: variant, order: reviewed_order, store: store, user: user)
 
     eligibility = described_class.new(product: product, store: store, user: user, variant: other_variant, order: order)
@@ -59,8 +59,8 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
 
   it 'does not allow duplicate reviews for the same purchased variant' do
     variant = create(:reviewable_variant, product: product)
-    order = create(:shipped_order, user: user, store: store, variants: [variant])
-    order.update!(shipment_state: 'shipped')
+    order = create(:shipped_order, customer: user, store: store, variants: [variant])
+
     review = create(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
 
     eligibility = described_class.new(product: product, store: store, user: user, variant: variant, order: order)
@@ -72,8 +72,8 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
 
   it 'treats legacy product-level reviews as already reviewed for a requested order variant' do
     variant = create(:reviewable_variant, product: product)
-    order = create(:shipped_order, user: user, store: store, variants: [variant])
-    order.update!(shipment_state: 'shipped')
+    order = create(:shipped_order, customer: user, store: store, variants: [variant])
+
     legacy_review = create(:review, product: product, store: store, user: user, order: nil, variant: nil)
 
     eligibility = described_class.new(product: product, store: store, user: user, variant: variant, order: order)
@@ -85,10 +85,10 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
 
   it 'allows a later repeat purchase when a legacy review is attributed to an earlier order' do
     variant = create(:reviewable_variant, product: product)
-    earlier_order = create(:shipped_order, user: user, store: store, variants: [variant])
-    later_order = create(:shipped_order, user: user, store: store, variants: [variant])
-    earlier_order.update!(completed_at: 3.days.ago, shipment_state: 'shipped')
-    later_order.update!(completed_at: 1.day.ago, shipment_state: 'shipped')
+    earlier_order = create(:shipped_order, customer: user, store: store, variants: [variant])
+    later_order = create(:shipped_order, customer: user, store: store, variants: [variant])
+    earlier_order.update!(completed_at: 3.days.ago)
+    later_order.update!(completed_at: 1.day.ago)
     legacy_review = create(
       :review,
       product: product,
@@ -123,10 +123,10 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
 
   it 'allows the same purchased variant to be reviewed again from a later shipped order' do
     variant = create(:reviewable_variant, product: product)
-    first_order = create(:shipped_order, user: user, store: store, variants: [variant])
-    second_order = create(:shipped_order, user: user, store: store, variants: [variant])
-    first_order.update!(shipment_state: 'shipped')
-    second_order.update!(shipment_state: 'shipped')
+    first_order = create(:shipped_order, customer: user, store: store, variants: [variant])
+    second_order = create(:shipped_order, customer: user, store: store, variants: [variant])
+
+
     create(:review, :for_variant, product: product, variant: variant, order: first_order, store: store, user: user)
 
     eligibility = described_class.new(product: product, store: store, user: user, variant: variant, order: second_order)
@@ -139,8 +139,8 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
   it 'rejects a requested order that does not contain the requested variant' do
     variant = create(:reviewable_variant, product: product)
     other_variant = create(:reviewable_variant, product: product)
-    order = create(:shipped_order, user: user, store: store, variants: [other_variant])
-    order.update!(shipment_state: 'shipped')
+    order = create(:shipped_order, customer: user, store: store, variants: [other_variant])
+
 
     eligibility = described_class.new(product: product, store: store, user: user, variant: variant, order: order)
 
@@ -151,8 +151,8 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
 
   it 'rejects a requested variant when that order item was fully returned' do
     variant = create(:reviewable_variant, product: product)
-    order = create(:shipped_order, user: user, store: store, variants: [variant])
-    order.update!(shipment_state: 'shipped')
+    order = create(:shipped_order, customer: user, store: store, variants: [variant])
+
     create_received_return_item(order: order, variant: variant)
 
     eligibility = described_class.new(product: product, store: store, user: user, variant: variant, order: order)
@@ -165,8 +165,8 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
   it 'keeps an unreturned variant in the same order eligible' do
     returned_variant = create(:reviewable_variant, product: product)
     kept_variant = create(:reviewable_variant, product: product)
-    order = create(:shipped_order, user: user, store: store, variants: [returned_variant, kept_variant])
-    order.update!(shipment_state: 'shipped')
+    order = create(:shipped_order, customer: user, store: store, variants: [returned_variant, kept_variant])
+
     create_received_return_item(order: order, variant: returned_variant)
 
     eligibility = described_class.new(product: product, store: store, user: user, variant: kept_variant, order: order)
@@ -176,14 +176,10 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
     expect(eligibility.eligible_order).to eq(order)
   end
 
-  it 'allows shipped variants from a partially canceled order' do
-    variant = create(:reviewable_variant, product: product)
-    order = create(:shipped_order, user: user, store: store, variants: [variant])
-    order.update_columns(state: 'partially_canceled', shipment_state: 'shipped')
+  it 'does not use another customer’s purchase' do
+    create(:shipped_order, customer: create(:customer), store: store, variants: [product.default_variant])
 
-    eligibility = described_class.new(product: product, store: store, user: user, variant: variant, order: order)
-
-    expect(eligibility).to be_can_review
-    expect(eligibility.eligible_order).to eq(order)
+    expect(eligibility).not_to be_can_review
+    expect(eligibility.reason).to eq('not_purchased')
   end
 end

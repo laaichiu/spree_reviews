@@ -50,7 +50,7 @@ module Spree
           end
 
           def find_customer_order!(order_id)
-            scope = Spree::Order.complete.where(user_id: current_user.id, store_id: current_store.id)
+            scope = Spree::Order.complete.where(customer_id: current_user.id, store_id: current_store.id)
 
             if Spree::PrefixedId.prefixed_id?(order_id)
               scope.find_by_prefix_id!(order_id)

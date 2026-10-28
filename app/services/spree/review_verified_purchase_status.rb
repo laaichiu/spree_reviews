@@ -50,6 +50,7 @@ module Spree
     def verified_purchase?
       return false unless review.user_id.present?
       return false unless review.order.present? && review.product.present?
+      return false unless review.order.customer_id == review.user_id && review.order.store_id == review.store_id
 
       Spree::ReviewablePurchase.new(
         order: review.order,

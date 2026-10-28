@@ -2,13 +2,13 @@ require 'spec_helper'
 
 RSpec.describe Spree::ReviewPurchaseAttribution, type: :service do
   let(:store) { create(:store) }
-  let(:product) { create(:product, stores: [store]) }
+  let(:product) { create(:product, store: store) }
   let(:user) { create(:user) }
 
   it 'backfills a legacy review with the matching shipped order and unambiguous variant' do
     variant = create(:reviewable_variant, product: product)
-    order = create(:shipped_order, user: user, store: store, variants: [variant])
-    order.update!(shipment_state: 'shipped')
+    order = create(:shipped_order, customer: user, store: store, variants: [variant])
+
     review = create(:review, product: product, store: store, user: user, order: nil, variant: nil)
 
     expect(described_class.new(review).call).to be(true)
@@ -19,8 +19,8 @@ RSpec.describe Spree::ReviewPurchaseAttribution, type: :service do
   it 'leaves the variant blank when an order has multiple variants for the same product' do
     first_variant = create(:reviewable_variant, product: product)
     second_variant = create(:reviewable_variant, product: product)
-    order = create(:shipped_order, user: user, store: store, variants: [first_variant, second_variant])
-    order.update!(shipment_state: 'shipped')
+    order = create(:shipped_order, customer: user, store: store, variants: [first_variant, second_variant])
+
     review = create(:review, product: product, store: store, user: user, order: nil, variant: nil)
 
     expect(described_class.new(review).call).to be(true)
@@ -30,8 +30,8 @@ RSpec.describe Spree::ReviewPurchaseAttribution, type: :service do
 
   it 'skips backfill when the matching purchase already has a review' do
     variant = create(:reviewable_variant, product: product)
-    order = create(:shipped_order, user: user, store: store, variants: [variant])
-    order.update!(shipment_state: 'shipped')
+    order = create(:shipped_order, customer: user, store: store, variants: [variant])
+
     create(:review, :for_variant, product: product, store: store, user: user, order: order, variant: variant)
     review = create(:review, product: product, store: store, user: user, order: nil, variant: nil)
 
@@ -42,10 +42,10 @@ RSpec.describe Spree::ReviewPurchaseAttribution, type: :service do
 
   it 'skips fully returned purchases when backfilling legacy reviews' do
     variant = create(:reviewable_variant, product: product)
-    returned_order = create(:shipped_order, user: user, store: store, variants: [variant])
-    kept_order = create(:shipped_order, user: user, store: store, variants: [variant])
-    returned_order.update!(completed_at: 3.days.ago, shipment_state: 'shipped')
-    kept_order.update!(completed_at: 1.day.ago, shipment_state: 'shipped')
+    returned_order = create(:shipped_order, customer: user, store: store, variants: [variant])
+    kept_order = create(:shipped_order, customer: user, store: store, variants: [variant])
+    returned_order.update!(completed_at: 3.days.ago)
+    kept_order.update!(completed_at: 1.day.ago)
     create_received_return_item(order: returned_order, variant: variant)
     review = create(
       :review,

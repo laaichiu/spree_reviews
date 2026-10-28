@@ -5,7 +5,7 @@ module Spree
     VOTES = %w[helpful not_helpful].freeze
 
     belongs_to :review, class_name: 'Spree::Review', inverse_of: :votes, touch: true
-    belongs_to :user, class_name: Spree.user_class.to_s, optional: true
+    belongs_to :user, class_name: Spree.customer_class.to_s, optional: true
 
     validates :review, :vote, presence: true
     validates :vote, inclusion: { in: VOTES }

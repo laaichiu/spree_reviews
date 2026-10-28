@@ -2,12 +2,12 @@ require 'spec_helper'
 
 RSpec.describe Spree::ReviewVerifiedPurchaseStatus, type: :service do
   let(:store) { create(:store) }
-  let(:product) { create(:product, stores: [store]) }
+  let(:product) { create(:product, store: store) }
   let(:user) { create(:user) }
 
   it 'marks an existing review unverified when its order variant is fully returned' do
     variant = create(:reviewable_variant, product: product)
-    order = create(:shipped_order, user: user, store: store, variants: [variant])
+    order = create(:shipped_order, customer: user, store: store, variants: [variant])
     review = create(
       :review,
       :verified_purchase,
@@ -26,9 +26,9 @@ RSpec.describe Spree::ReviewVerifiedPurchaseStatus, type: :service do
 
   it 'keeps an existing review verified when the same variant still has retained quantity' do
     variant = create(:reviewable_variant, product: product)
-    order = create(:shipped_order, user: user, store: store, variants: [variant])
+    order = create(:shipped_order, customer: user, store: store, variants: [variant])
     line_item = order.line_items.find_by!(variant: variant)
-    inventory_unit = order.inventory_units.find_by!(line_item: line_item, variant: variant)
+    inventory_unit = order.fulfillment_items.find_by!(line_item: line_item, variant: variant)
     line_item.update!(quantity: 2)
     inventory_unit.update!(quantity: 2)
     review = create(
@@ -50,7 +50,7 @@ RSpec.describe Spree::ReviewVerifiedPurchaseStatus, type: :service do
   it 'does not change a review for another retained variant in the same order' do
     reviewed_variant = create(:reviewable_variant, product: product)
     returned_variant = create(:reviewable_variant, product: product)
-    order = create(:shipped_order, user: user, store: store, variants: [reviewed_variant, returned_variant])
+    order = create(:shipped_order, customer: user, store: store, variants: [reviewed_variant, returned_variant])
     review = create(
       :review,
       :verified_purchase,
@@ -70,7 +70,7 @@ RSpec.describe Spree::ReviewVerifiedPurchaseStatus, type: :service do
   it 'keeps an ambiguous product-level review verified while any matching variant is retained' do
     returned_variant = create(:reviewable_variant, product: product)
     kept_variant = create(:reviewable_variant, product: product)
-    order = create(:shipped_order, user: user, store: store, variants: [returned_variant, kept_variant])
+    order = create(:shipped_order, customer: user, store: store, variants: [returned_variant, kept_variant])
     review = create(:review, :verified_purchase, product: product, variant: nil, order: order, store: store, user: user)
     create_received_return_item(order: order, variant: returned_variant)
 
@@ -81,7 +81,7 @@ RSpec.describe Spree::ReviewVerifiedPurchaseStatus, type: :service do
   it 'marks an ambiguous product-level review unverified when all matching variants are returned' do
     first_variant = create(:reviewable_variant, product: product)
     second_variant = create(:reviewable_variant, product: product)
-    order = create(:shipped_order, user: user, store: store, variants: [first_variant, second_variant])
+    order = create(:shipped_order, customer: user, store: store, variants: [first_variant, second_variant])
     review = create(:review, :verified_purchase, product: product, variant: nil, order: order, store: store, user: user)
     create_received_return_item(order: order, variant: first_variant)
     create_received_return_item(order: order, variant: second_variant)
@@ -92,10 +92,19 @@ RSpec.describe Spree::ReviewVerifiedPurchaseStatus, type: :service do
 
   it 'can promote a purchased review that was not previously marked verified' do
     variant = create(:reviewable_variant, product: product)
-    order = create(:shipped_order, user: user, store: store, variants: [variant])
+    order = create(:shipped_order, customer: user, store: store, variants: [variant])
     review = create(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
 
     expect(described_class.sync!(review)).to be(true)
     expect(review.reload.verified_purchase).to be(true)
   end
+  it 'does not verify a review attached to another customer’s order' do
+    variant = create(:reviewable_variant, product: product)
+    order = create(:shipped_order, customer: user, store: store, variants: [variant])
+    review = create(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
+    review.update_column(:user_id, create(:customer).id)
+
+    expect(described_class.verified_purchase?(review.reload)).to be(false)
+  end
+
 end

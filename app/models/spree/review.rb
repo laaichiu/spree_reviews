@@ -25,7 +25,7 @@ module Spree
     belongs_to :variant, class_name: 'Spree::Variant', optional: true
     belongs_to :order, class_name: 'Spree::Order', optional: true
     belongs_to :store, class_name: 'Spree::Store'
-    belongs_to :user, class_name: Spree.user_class.to_s, optional: true
+    belongs_to :user, class_name: Spree.customer_class.to_s, optional: true
 
     has_many :review_media, class_name: 'Spree::ReviewMedia', dependent: :destroy, inverse_of: :review
     has_many :answers, class_name: 'Spree::ReviewAnswer', dependent: :destroy, inverse_of: :review
@@ -262,7 +262,7 @@ module Spree
       return if order.blank?
 
       errors.add(:order, :invalid) if store.present? && order.store_id != store.id
-      errors.add(:order, :invalid) if user.present? && order.user_id != user.id
+      errors.add(:order, :invalid) if user.present? && order.customer_id != user.id
     end
 
     def order_contains_reviewed_item

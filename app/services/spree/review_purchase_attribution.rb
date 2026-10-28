@@ -48,12 +48,12 @@ module Spree
     end
 
     def candidate_orders
-      orders = Spree::Order.complete.shipped.
-               where(user_id: review.user_id, store_id: review.store_id).
-               where.not(state: 'canceled').
+      orders = Spree::Order.complete.
+               where(customer_id: review.user_id, store_id: review.store_id).
+               where.not(status: 'canceled').
                joins(line_items: :variant).
                merge(candidate_variant_scope).
-               includes({ inventory_units: { return_items: :reimbursement } }, line_items: :variant).
+               includes({ fulfillment_items: { return_line_items: :return } }, line_items: :variant).
                distinct.
                to_a
 
