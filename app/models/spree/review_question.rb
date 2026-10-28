@@ -18,7 +18,7 @@ module Spree
 
     belongs_to :store, class_name: 'Spree::Store'
     belongs_to :product, class_name: 'Spree::Product', optional: true
-    belongs_to :category, class_name: 'Spree::Taxon', optional: true
+    belongs_to :category, class_name: 'Spree::Category', optional: true
 
     has_many :options, -> { order(:position) }, class_name: 'Spree::ReviewQuestionOption',
              dependent: :destroy, inverse_of: :question
@@ -53,9 +53,8 @@ module Spree
     end
 
     def self.review_category_ids_for(product, store)
-      product.taxons.joins(:taxonomy).
-        where(spree_taxonomies: { store_id: store.id }).
-        flat_map { |taxon| taxon.self_and_ancestors.ids }.
+      product.categories.where(store_id: store.id).
+        flat_map { |category| category.self_and_ancestors.ids }.
         uniq
     end
 
@@ -91,7 +90,7 @@ module Spree
         errors.add(:product, :invalid)
       end
 
-      if category.present? && category.taxonomy&.store_id != store.id
+      if category.present? && category.store_id != store.id
         errors.add(:category, :invalid)
       end
     end

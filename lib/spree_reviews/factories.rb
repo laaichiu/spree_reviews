@@ -3,7 +3,7 @@ require 'stringio'
 FactoryBot.define do
   factory :review, class: Spree::Review do
     store { Spree::Store.default.persisted? ? Spree::Store.default : association(:store, default: true) }
-    product { association(:product, stores: [store]) }
+    product { association(:product, store: store) }
     rating { 5 }
     title { 'Great product' }
     body { 'The fit and quality are exactly what I expected.' }
@@ -24,7 +24,7 @@ FactoryBot.define do
     end
 
     trait :for_variant do
-      variant { product.master }
+      variant { product.default_variant }
     end
   end
 
@@ -57,12 +57,12 @@ FactoryBot.define do
 
     trait :for_product do
       applies_to { 'product' }
-      product { association(:product, stores: [store]) }
+      product { association(:product, store: store) }
     end
 
     trait :for_category do
       applies_to { 'category' }
-      category { association(:taxon, taxonomy: association(:taxonomy, store: store)) }
+      category { association(:category, store: store) }
     end
 
     trait :multi_select do
@@ -117,7 +117,7 @@ FactoryBot.define do
 
   factory :product_review_summary, class: Spree::ProductReviewSummary do
     store { Spree::Store.default.persisted? ? Spree::Store.default : association(:store, default: true) }
-    product { association(:product, stores: [store]) }
+    product { association(:product, store: store) }
     average_rating { 0 }
     reviews_count { 0 }
     rating_1_count { 0 }
@@ -145,6 +145,6 @@ FactoryBot.define do
   end
 
   factory :reviewable_variant, parent: :on_demand_variant do
-    product { association(:product, stores: [Spree::Store.default]) }
+    product { association(:product, store: Spree::Store.default) }
   end
 end
