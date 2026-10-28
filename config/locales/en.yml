@@ -33,5 +33,10 @@ en:
         position: Position
         value: Value
   spree:
+    permissions_catalog:
+      resources:
+        reviews:
+          label: Reviews
+          description: Manage product reviews and review questions.
     review_questions: Review Questions
     reviews: Reviews

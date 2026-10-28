@@ -3,7 +3,7 @@ module Spree
     module V3
       module Admin
         class ReviewQuestionOptionsController < ResourceController
-          scoped_resource :products
+          scoped_resource :reviews
 
           protected
 

@@ -3,7 +3,7 @@ module Spree
     module V3
       module Admin
         class ReviewsController < ResourceController
-          scoped_resource :products
+          scoped_resource :reviews
 
           # POST /api/v3/admin/reviews/:id/approve
           def approve
