@@ -1,57 +1,46 @@
 require 'spec_helper'
 
-RSpec.describe Spree::ReviewPurchaseSubscriber, type: :model do
+RSpec.describe Spree::ReviewPurchaseSubscriber do
   let(:store) { create(:store) }
-  let(:product) { create(:product, stores: [store]) }
-  let(:user) { create(:user) }
+  let(:product) { create(:product, store: store) }
+  let(:customer) { create(:customer) }
+  let(:variant) { product.default_variant }
+  let(:order) { create(:shipped_order, customer: customer, store: store, variants: [variant]) }
+  let!(:review) do
+    create(:review, :verified_purchase, product: product, variant: variant, order: order, store: store, user: customer)
+  end
 
-  it 'refreshes matching review verified status when a return item is received' do
-    variant = create(:reviewable_variant, product: product)
-    order = create(:shipped_order, user: user, store: store, variants: [variant])
-    review = create(
-      :review,
-      :verified_purchase,
-      :for_variant,
-      product: product,
-      variant: variant,
-      order: order,
-      store: store,
-      user: user
-    )
-    return_item = create_received_return_item(order: order, variant: variant)
+  it 'refreshes reviews on a received return' do
+    return_line = create_received_return_item(order: order, variant: variant)
 
-    described_class.new.call(event_for('return_item.received', return_item))
+    described_class.call(event_for('return.received', return_line.return))
 
     expect(review.reload.verified_purchase).to be(false)
   end
 
-  it 'refreshes order reviews when an order is canceled' do
-    variant = create(:reviewable_variant, product: product)
-    order = create(:shipped_order, user: user, store: store, variants: [variant])
-    review = create(
-      :review,
-      :verified_purchase,
-      :for_variant,
-      product: product,
-      variant: variant,
-      order: order,
-      store: store,
-      user: user
-    )
-    order.update_columns(state: 'canceled', shipment_state: 'shipped')
+  it 'refreshes reviews on order cancellation' do
+    order.update_columns(status: 'canceled')
 
-    described_class.new.call(event_for('order.canceled', order))
+    described_class.call(event_for('order.canceled', order))
 
     expect(review.reload.verified_purchase).to be(false)
   end
 
-  private
+  it 'is registered for a real return receipt event' do
+    item = order.fulfillment_items.find_by!(variant: variant)
+    line = build(:return_line_item, fulfillment_item: item, line_item: item.line_item, variant: variant)
+    return_record = create(:return, order: order, store: store, status: 'approved', return_line_items: [line])
+
+    Spree::Events.enable do
+      Spree::Events.activate!
+      result = Spree::Returns::Receive.call(return_record: return_record)
+      expect(result).to be_success
+    end
+
+    expect(review.reload.verified_purchase).to be(false)
+  end
 
   def event_for(name, record)
-    Spree::Event.new(
-      name: name,
-      store_id: store.id,
-      payload: { id: record.prefixed_id }
-    )
+    Spree::Event.new(name: name, store_id: store.id, payload: { id: record.prefixed_id })
   end
 end
