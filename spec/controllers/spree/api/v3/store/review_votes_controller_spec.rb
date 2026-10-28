@@ -14,6 +14,20 @@ RSpec.describe Spree::Api::V3::Store::ReviewVotesController, type: :controller d
   end
 
   describe 'POST #create' do
+    it 'does not allow votes on a product outside the customer catalog' do
+      company = create(:company, store: store)
+      catalog = create(:catalog, store: store)
+      create(:catalog_assignment, catalog: catalog, assignable: company)
+      create(:company_membership, company: company, customer: user)
+      catalog.add_products([create(:product, store: store).id])
+      request.headers['Authorization'] = "Bearer #{jwt_token}"
+
+      post :create, params: { review_id: review.prefixed_id, vote: 'helpful' }
+
+      expect(response).to have_http_status(:not_found)
+      expect(review.votes.count).to eq(0)
+    end
+
     it 'creates a helpful vote and returns updated counters' do
       expect {
         post :create, params: { review_id: review.prefixed_id, vote: 'helpful' }

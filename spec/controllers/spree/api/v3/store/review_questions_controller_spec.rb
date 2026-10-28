@@ -32,6 +32,19 @@ RSpec.describe Spree::Api::V3::Store::ReviewQuestionsController, type: :controll
       ])
     end
 
+    it 'does not expose questions for a product outside the customer catalog' do
+      company = create(:company, store: store)
+      catalog = create(:catalog, store: store)
+      create(:catalog_assignment, catalog: catalog, assignable: company)
+      create(:company_membership, company: company, customer: user)
+      catalog.add_products([create(:product, store: store).id])
+      request.headers['Authorization'] = "Bearer #{jwt_token}"
+
+      get :index, params: { product_id: product.prefixed_id }
+
+      expect(response).to have_http_status(:not_found)
+    end
+
     it 'returns category questions configured on a parent category' do
       parent_taxon = create(:category, store: store)
       child_taxon = create(:category, store: store, parent: parent_taxon)

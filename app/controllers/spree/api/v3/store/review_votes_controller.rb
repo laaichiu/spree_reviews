@@ -3,6 +3,8 @@ module Spree
     module V3
       module Store
         class ReviewVotesController < Store::BaseController
+          include Spree::Api::V3::Store::StorefrontProducts
+
           before_action :set_review
 
           # POST /api/v3/store/reviews/:review_id/helpful_votes
@@ -30,7 +32,9 @@ module Spree
           private
 
           def set_review
-            @review = Spree::Review.approved.for_store(current_store).find_by_prefix_id!(params[:review_id])
+            @review = Spree::Review.approved.for_store(current_store).
+                      where(product_id: storefront_products.select(:id)).
+                      find_by_prefix_id!(params[:review_id])
           end
 
           def vote_params

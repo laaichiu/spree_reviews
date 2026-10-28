@@ -4,6 +4,7 @@ module Spree
       module Store
         module ReviewProductLookup
           extend ActiveSupport::Concern
+          include Spree::Api::V3::Store::StorefrontProducts
 
           included do
             before_action :set_product
@@ -22,7 +23,7 @@ module Spree
           end
 
           def product_scope
-            Spree::Product.for_store(current_store).active(current_currency)
+            storefront_products(Spree::Product.for_store(current_store))
           end
 
           def review_variant
