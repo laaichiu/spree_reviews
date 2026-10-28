@@ -14,28 +14,6 @@ module SpreeReviews
       SpreeReviews::Config = SpreeReviews::Configuration.new
     end
 
-    initializer 'spree_reviews.assets' do |app|
-      if app.config.respond_to?(:assets)
-        app.config.assets.paths << root.join('app/javascript')
-        app.config.assets.precompile += %w[spree_reviews_manifest]
-      end
-    end
-
-    initializer 'spree_reviews.importmap', before: 'importmap' do |app|
-      if app.config.respond_to?(:importmap)
-        app.config.importmap.paths << root.join('config/importmap.rb')
-        # https://github.com/rails/importmap-rails?tab=readme-ov-file#sweeping-the-cache-in-development-and-test
-        app.config.importmap.cache_sweepers << root.join('app/javascript')
-      end
-    end
-
-    initializer 'spree_reviews.admin_importmap', after: 'spree.admin.importmap' do |app|
-      if app.config.respond_to?(:spree_admin) && app.config.spree_admin.respond_to?(:importmap)
-        app.config.spree_admin.importmap.draw(root.join('config/importmap.rb'))
-        app.config.spree_admin.cache_sweepers << root.join('app/javascript')
-      end
-    end
-
     config.after_initialize do
       require_dependency root.join('app/subscribers/spree/review_purchase_subscriber').to_s
 

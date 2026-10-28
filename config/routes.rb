@@ -1,15 +1,4 @@
 Spree::Core::Engine.add_routes do
-  namespace :admin, path: Spree.admin_path do
-    resources :reviews, only: [:index, :show, :update, :destroy] do
-      member do
-        put :approve
-        put :reject
-      end
-    end
-
-    resources :review_questions, except: :show
-  end
-
   namespace :api, defaults: { format: 'json' } do
     namespace :v3 do
       namespace :admin do
