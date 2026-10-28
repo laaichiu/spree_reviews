@@ -3,10 +3,11 @@ require 'spree/api/testing_support/v3/base'
 
 RSpec.describe Spree::Api::V3::Store::ReviewEligibilitiesController, type: :controller do
   render_views
+  routes { Spree::Core::Engine.routes }
 
   include_context 'API v3 Store'
 
-  let(:product) { create(:product, stores: [store]) }
+  let(:product) { create(:product, store: store) }
 
   before do
     request.headers['X-Spree-Api-Key'] = api_key.token
@@ -24,7 +25,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewEligibilitiesController, type: :cont
 
     it 'returns not_purchased for authenticated customers without a shipped purchase' do
       request.headers['Authorization'] = "Bearer #{jwt_token}"
-      create(:order_ready_to_ship, user: user, store: store, variants: [product.master])
+      create(:order_ready_to_ship, customer: user, store: store, variants: [product.default_variant])
 
       get :show, params: { product_id: product.prefixed_id }
 
@@ -36,8 +37,8 @@ RSpec.describe Spree::Api::V3::Store::ReviewEligibilitiesController, type: :cont
 
     it 'allows authenticated customers with a shipped purchase' do
       request.headers['Authorization'] = "Bearer #{jwt_token}"
-      order = create(:shipped_order, user: user, store: store, variants: [product.master])
-      order.update!(shipment_state: 'shipped')
+      order = create(:shipped_order, customer: user, store: store, variants: [product.default_variant])
+
 
       get :show, params: { product_id: product.prefixed_id, order_id: order.prefixed_id }
 
@@ -51,8 +52,8 @@ RSpec.describe Spree::Api::V3::Store::ReviewEligibilitiesController, type: :cont
 
     it 'returns already_reviewed when the customer already reviewed the product' do
       request.headers['Authorization'] = "Bearer #{jwt_token}"
-      order = create(:shipped_order, user: user, store: store, variants: [product.master])
-      order.update!(shipment_state: 'shipped')
+      order = create(:shipped_order, customer: user, store: store, variants: [product.default_variant])
+
       review = create(:review, product: product, order: order, store: store, user: user)
 
       get :show, params: { product_id: product.prefixed_id, order_id: order.prefixed_id }
@@ -67,8 +68,8 @@ RSpec.describe Spree::Api::V3::Store::ReviewEligibilitiesController, type: :cont
     it 'returns already_reviewed for legacy reviews missing order and variant links' do
       request.headers['Authorization'] = "Bearer #{jwt_token}"
       variant = create(:reviewable_variant, product: product)
-      order = create(:shipped_order, user: user, store: store, variants: [variant])
-      order.update!(shipment_state: 'shipped')
+      order = create(:shipped_order, customer: user, store: store, variants: [variant])
+
       review = create(:review, product: product, order: nil, variant: nil, store: store, user: user)
 
       get :show, params: { product_id: product.prefixed_id, variant_id: variant.prefixed_id, order_id: order.prefixed_id }
@@ -83,10 +84,10 @@ RSpec.describe Spree::Api::V3::Store::ReviewEligibilitiesController, type: :cont
     it 'allows a repeat purchase when a legacy review belongs to an earlier shipped order' do
       request.headers['Authorization'] = "Bearer #{jwt_token}"
       variant = create(:reviewable_variant, product: product)
-      earlier_order = create(:shipped_order, user: user, store: store, variants: [variant])
-      later_order = create(:shipped_order, user: user, store: store, variants: [variant])
-      earlier_order.update!(completed_at: 3.days.ago, shipment_state: 'shipped')
-      later_order.update!(completed_at: 1.day.ago, shipment_state: 'shipped')
+      earlier_order = create(:shipped_order, customer: user, store: store, variants: [variant])
+      later_order = create(:shipped_order, customer: user, store: store, variants: [variant])
+      earlier_order.update!(completed_at: 3.days.ago)
+      later_order.update!(completed_at: 1.day.ago)
       create(
         :review,
         product: product,
@@ -114,10 +115,10 @@ RSpec.describe Spree::Api::V3::Store::ReviewEligibilitiesController, type: :cont
       request.headers['Authorization'] = "Bearer #{jwt_token}"
       variant = create(:reviewable_variant, product: product)
       other_variant = create(:reviewable_variant, product: product)
-      order = create(:shipped_order, user: user, store: store, variants: [other_variant])
-      reviewed_order = create(:shipped_order, user: user, store: store, variants: [variant])
-      order.update!(shipment_state: 'shipped')
-      reviewed_order.update!(shipment_state: 'shipped')
+      order = create(:shipped_order, customer: user, store: store, variants: [other_variant])
+      reviewed_order = create(:shipped_order, customer: user, store: store, variants: [variant])
+
+
       create(:review, :for_variant, product: product, variant: variant, order: reviewed_order, store: store, user: user)
 
       get :show, params: { product_id: product.prefixed_id, variant_id: other_variant.prefixed_id, order_id: order.prefixed_id }
@@ -131,10 +132,10 @@ RSpec.describe Spree::Api::V3::Store::ReviewEligibilitiesController, type: :cont
     it 'allows the same variant again when it belongs to a different shipped order' do
       request.headers['Authorization'] = "Bearer #{jwt_token}"
       variant = create(:reviewable_variant, product: product)
-      reviewed_order = create(:shipped_order, user: user, store: store, variants: [variant])
-      new_order = create(:shipped_order, user: user, store: store, variants: [variant])
-      reviewed_order.update!(shipment_state: 'shipped')
-      new_order.update!(shipment_state: 'shipped')
+      reviewed_order = create(:shipped_order, customer: user, store: store, variants: [variant])
+      new_order = create(:shipped_order, customer: user, store: store, variants: [variant])
+
+
       create(:review, :for_variant, product: product, variant: variant, order: reviewed_order, store: store, user: user)
 
       get :show, params: { product_id: product.prefixed_id, variant_id: variant.prefixed_id, order_id: new_order.prefixed_id }

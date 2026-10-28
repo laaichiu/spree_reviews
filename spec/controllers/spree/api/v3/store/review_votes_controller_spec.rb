@@ -3,6 +3,7 @@ require 'spree/api/testing_support/v3/base'
 
 RSpec.describe Spree::Api::V3::Store::ReviewVotesController, type: :controller do
   render_views
+  routes { Spree::Core::Engine.routes }
 
   include_context 'API v3 Store'
 

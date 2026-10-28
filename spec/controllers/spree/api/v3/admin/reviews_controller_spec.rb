@@ -2,10 +2,11 @@ require 'spec_helper'
 
 RSpec.describe Spree::Api::V3::Admin::ReviewsController, type: :controller do
   render_views
+  routes { Spree::Core::Engine.routes }
 
   include_context 'API v3 Admin authenticated'
 
-  let(:product) { create(:product, stores: [store]) }
+  let(:product) { create(:product, store: store) }
   let(:review_user) { create(:user, first_name: 'Jacqueline', last_name: 'Brown') }
   let!(:review) do
     create(
@@ -16,7 +17,7 @@ RSpec.describe Spree::Api::V3::Admin::ReviewsController, type: :controller do
       title: 'Needs review',
       status: 'pending',
       reviewer_name: 'Old Public Name',
-      private_metadata: { moderation: 'queued' }
+      metadata: { moderation: 'queued' }
     )
   end
 
@@ -51,7 +52,6 @@ RSpec.describe Spree::Api::V3::Admin::ReviewsController, type: :controller do
       expect(response).to have_http_status(:ok)
       expect(json_response['id']).to eq(review.prefixed_id)
       expect(json_response['metadata']).to eq('moderation' => 'queued')
-      expect(json_response['private_metadata']).to eq('moderation' => 'queued')
       expect(json_response['product_id']).to eq(product.prefixed_id)
       expect(json_response).to have_key('user_id')
       expect(json_response).to have_key('order_id')
@@ -68,8 +68,8 @@ RSpec.describe Spree::Api::V3::Admin::ReviewsController, type: :controller do
     end
 
     it 'returns an attributed order ID for legacy reviews missing order_id' do
-      order = create(:shipped_order, user: review_user, store: store, variants: [product.master])
-      order.update!(completed_at: 2.days.ago, shipment_state: 'shipped')
+      order = create(:shipped_order, customer: review_user, store: store, variants: [product.default_variant])
+      order.update!(completed_at: 2.days.ago)
       review.update_columns(order_id: nil, variant_id: nil, created_at: 1.day.ago, updated_at: 1.day.ago)
 
       get :show, params: { id: review.prefixed_id }, as: :json

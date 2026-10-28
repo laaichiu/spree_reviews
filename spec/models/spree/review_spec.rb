@@ -2,7 +2,7 @@ require 'spec_helper'
 
 RSpec.describe Spree::Review, type: :model do
   let(:store) { create(:store) }
-  let(:product) { create(:product, stores: [store]) }
+  let(:product) { create(:product, store: store) }
 
   describe 'defaults' do
     it 'starts pending with zero vote counters and optional body' do
@@ -126,8 +126,8 @@ RSpec.describe Spree::Review, type: :model do
       user = create(:user)
       variant = create(:reviewable_variant, product: product)
       other_variant = create(:reviewable_variant, product: product)
-      order = create(:shipped_order, user: user, store: store, variants: [variant, other_variant])
-      repeat_order = create(:shipped_order, user: user, store: store, variants: [variant])
+      order = create(:shipped_order, customer: user, store: store, variants: [variant, other_variant])
+      repeat_order = create(:shipped_order, customer: user, store: store, variants: [variant])
       create(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
 
       duplicate = build(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
@@ -141,8 +141,8 @@ RSpec.describe Spree::Review, type: :model do
     end
 
     it 'requires the variant to belong to the reviewed product' do
-      other_product = create(:product, stores: [store])
-      review = build(:review, product: product, variant: other_product.master, store: store)
+      other_product = create(:product, store: store)
+      review = build(:review, product: product, variant: other_product.default_variant, store: store)
 
       expect(review).not_to be_valid
       expect(review.errors[:variant]).to be_present
@@ -152,7 +152,7 @@ RSpec.describe Spree::Review, type: :model do
       user = create(:user)
       variant = create(:reviewable_variant, product: product)
       other_variant = create(:reviewable_variant, product: product)
-      order = create(:shipped_order, user: user, store: store, variants: [other_variant])
+      order = create(:shipped_order, customer: user, store: store, variants: [other_variant])
 
       review = build(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
 
@@ -163,7 +163,7 @@ RSpec.describe Spree::Review, type: :model do
     it 'requires the reviewed order variant to have unreturned quantity for new reviews' do
       user = create(:user)
       variant = create(:reviewable_variant, product: product)
-      order = create(:shipped_order, user: user, store: store, variants: [variant])
+      order = create(:shipped_order, customer: user, store: store, variants: [variant])
       create_received_return_item(order: order, variant: variant)
 
       review = build(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
@@ -175,7 +175,7 @@ RSpec.describe Spree::Review, type: :model do
     it 'allows existing reviews to be moderated after a later return' do
       user = create(:user)
       variant = create(:reviewable_variant, product: product)
-      order = create(:shipped_order, user: user, store: store, variants: [variant])
+      order = create(:shipped_order, customer: user, store: store, variants: [variant])
       review = create(:review, :for_variant, product: product, variant: variant, order: order, store: store, user: user)
       create_received_return_item(order: order, variant: variant)
 
@@ -188,7 +188,7 @@ RSpec.describe Spree::Review, type: :model do
   describe '#attributed_order' do
     it 'returns the persisted order when present' do
       user = create(:user)
-      order = create(:shipped_order, user: user, store: store, variants: [product.master])
+      order = create(:shipped_order, customer: user, store: store, variants: [product.default_variant])
       review = create(:review, product: product, store: store, user: user, order: order)
 
       expect(review.attributed_order).to eq(order)
@@ -196,8 +196,8 @@ RSpec.describe Spree::Review, type: :model do
 
     it 'infers a shipped purchase for legacy reviews missing order_id' do
       user = create(:user)
-      order = create(:shipped_order, user: user, store: store, variants: [product.master])
-      order.update!(completed_at: 2.days.ago, shipment_state: 'shipped')
+      order = create(:shipped_order, customer: user, store: store, variants: [product.default_variant])
+      order.update!(completed_at: 2.days.ago)
       review = create(
         :review,
         product: product,

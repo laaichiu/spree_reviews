@@ -3,10 +3,11 @@ require 'spree/api/testing_support/v3/base'
 
 RSpec.describe Spree::Api::V3::Store::ReviewSummariesController, type: :controller do
   render_views
+  routes { Spree::Core::Engine.routes }
 
   include_context 'API v3 Store'
 
-  let(:product) { create(:product, stores: [store]) }
+  let(:product) { create(:product, store: store) }
 
   before do
     request.headers['X-Spree-Api-Key'] = api_key.token

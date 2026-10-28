@@ -3,10 +3,11 @@ require 'spree/api/testing_support/v3/base'
 
 RSpec.describe Spree::Api::V3::Store::ReviewQuestionsController, type: :controller do
   render_views
+  routes { Spree::Core::Engine.routes }
 
   include_context 'API v3 Store'
 
-  let(:product) { create(:product, stores: [store]) }
+  let(:product) { create(:product, store: store) }
 
   before do
     request.headers['X-Spree-Api-Key'] = api_key.token
@@ -14,11 +15,11 @@ RSpec.describe Spree::Api::V3::Store::ReviewQuestionsController, type: :controll
 
   describe 'GET #index' do
     it 'returns active store, product, and category scoped questions for the product' do
-      taxon = create(:taxon, taxonomy: create(:taxonomy, store: store))
-      product.taxons << taxon
+      category = create(:category, store: store)
+      product.categories << category
       store_question = create(:review_question, store: store, label: 'Body Type', position: 1)
       product_question = create(:review_question, :for_product, store: store, product: product, label: 'Usual Size', position: 2)
-      category_question = create(:review_question, :for_category, store: store, category: taxon, label: 'Overall Fit', position: 3)
+      category_question = create(:review_question, :for_category, store: store, category: category, label: 'Overall Fit', position: 3)
       create(:review_question, :text, store: store, label: 'Internal note', active: false)
 
       get :index, params: { product_id: product.prefixed_id }
@@ -32,10 +33,9 @@ RSpec.describe Spree::Api::V3::Store::ReviewQuestionsController, type: :controll
     end
 
     it 'returns category questions configured on a parent category' do
-      taxonomy = create(:taxonomy, store: store)
-      parent_taxon = create(:taxon, taxonomy: taxonomy)
-      child_taxon = create(:taxon, taxonomy: taxonomy, parent: parent_taxon)
-      product.taxons << child_taxon
+      parent_taxon = create(:category, store: store)
+      child_taxon = create(:category, store: store, parent: parent_taxon)
+      product.categories << child_taxon
       category_question = create(:review_question, :for_category, store: store, category: parent_taxon, label: 'Overall Fit')
 
       get :index, params: { product_id: product.prefixed_id }

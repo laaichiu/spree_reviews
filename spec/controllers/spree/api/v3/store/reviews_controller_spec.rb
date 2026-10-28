@@ -3,10 +3,11 @@ require 'spree/api/testing_support/v3/base'
 
 RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
   render_views
+  routes { Spree::Core::Engine.routes }
 
   include_context 'API v3 Store'
 
-  let(:product) { create(:product, stores: [store]) }
+  let(:product) { create(:product, store: store) }
 
   before do
     request.headers['X-Spree-Api-Key'] = api_key.token
@@ -39,10 +40,10 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
     it 'returns multiple reviews from the same customer across separate orders' do
       reviewer = create(:user)
       variant = create(:reviewable_variant, product: product)
-      first_order = create(:shipped_order, user: reviewer, store: store, variants: [variant])
-      second_order = create(:shipped_order, user: reviewer, store: store, variants: [variant])
-      first_order.update!(shipment_state: 'shipped')
-      second_order.update!(shipment_state: 'shipped')
+      first_order = create(:shipped_order, customer: reviewer, store: store, variants: [variant])
+      second_order = create(:shipped_order, customer: reviewer, store: store, variants: [variant])
+
+
       first_review = create(
         :review,
         :approved,
@@ -80,14 +81,14 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
         :option_value,
         option_type: color_type,
         name: 'white',
-        presentation: 'White',
+        label: 'White',
         position: 1
       )
       size = create(
         :option_value,
         option_type: size_type,
         name: 'size_7_5',
-        presentation: '7.5',
+        label: '7.5',
         position: 1
       )
       variant = create(
@@ -141,9 +142,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
     end
 
     let!(:review_order) do
-      create(:shipped_order, user: user, store: store, variants: [review_variant]).tap do |order|
-        order.update!(shipment_state: 'shipped')
-      end
+      create(:shipped_order, customer: user, store: store, variants: [review_variant])
     end
 
     it 'creates a pending review with answers and images' do
@@ -250,8 +249,8 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
 
     it 'allows the same customer to review a different purchased variant of the same product' do
       other_variant = create(:reviewable_variant, product: product)
-      other_order = create(:shipped_order, user: user, store: store, variants: [other_variant])
-      other_order.update!(shipment_state: 'shipped')
+      other_order = create(:shipped_order, customer: user, store: store, variants: [other_variant])
+
       create(:review, :for_variant, product: product, variant: review_variant, order: review_order, store: store, user: user)
 
       expect {
@@ -271,8 +270,8 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
     end
 
     it 'allows the same customer to review the same variant from a different shipped order' do
-      later_order = create(:shipped_order, user: user, store: store, variants: [review_variant])
-      later_order.update!(shipment_state: 'shipped')
+      later_order = create(:shipped_order, customer: user, store: store, variants: [review_variant])
+
       create(:review, :for_variant, product: product, variant: review_variant, order: review_order, store: store, user: user)
 
       expect {
@@ -334,7 +333,7 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
     end
 
     it 'rejects customers without a shipped purchase for the product' do
-      other_product = create(:product, stores: [store])
+      other_product = create(:product, store: store)
 
       expect {
         post :create, params: {

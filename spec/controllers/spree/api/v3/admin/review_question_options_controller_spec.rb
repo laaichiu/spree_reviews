@@ -2,6 +2,7 @@ require 'spec_helper'
 
 RSpec.describe Spree::Api::V3::Admin::ReviewQuestionOptionsController, type: :controller do
   render_views
+  routes { Spree::Core::Engine.routes }
 
   include_context 'API v3 Admin authenticated'
 

@@ -2,10 +2,11 @@ require 'spec_helper'
 
 RSpec.describe Spree::Api::V3::Admin::ReviewQuestionsController, type: :controller do
   render_views
+  routes { Spree::Core::Engine.routes }
 
   include_context 'API v3 Admin authenticated'
 
-  let(:product) { create(:product, stores: [store]) }
+  let(:product) { create(:product, store: store) }
 
   before { request.headers.merge!(headers) }
 
@@ -58,8 +59,7 @@ RSpec.describe Spree::Api::V3::Admin::ReviewQuestionsController, type: :controll
 
     it 'rejects a category from another store' do
       other_store = create(:store)
-      other_taxonomy = create(:taxonomy, store: other_store)
-      other_category = create(:taxon, taxonomy: other_taxonomy)
+      other_category = create(:category, store: other_store)
 
       post :create,
            params: {
