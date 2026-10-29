@@ -217,6 +217,37 @@ RSpec.describe Spree::Api::V3::Store::ReviewsController, type: :controller do
       expect(json_response['body']).to eq('')
     end
 
+    it 'attributes an omitted variant when the purchase is unambiguous' do
+      post :create, params: {
+        product_id: product.prefixed_id, order_id: review_order.prefixed_id, rating: 5, title: 'Great fit'
+      }
+
+      expect(response).to have_http_status(:created)
+      expect(Spree::Review.last.variant).to eq(review_variant)
+    end
+
+    it 'requires a variant when the purchase contains several reviewable variants' do
+      other_variant = create(:reviewable_variant, product: product)
+      order = create(:shipped_order, customer: user, store: store, variants: [review_variant, other_variant])
+
+      expect {
+        post :create, params: { product_id: product.prefixed_id, order_id: order.prefixed_id, rating: 5, title: 'Great fit' }
+      }.not_to change(Spree::Review, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json_response['error']['details']['variant']).to be_present
+    end
+
+    it 'rejects a duplicate when the unambiguous purchased variant was omitted' do
+      existing = create(:review, product: product, store: store, customer: user, order: review_order, variant: review_variant)
+
+      post :create, params: { product_id: product.prefixed_id, order_id: review_order.prefixed_id, rating: 5, title: 'Again' }
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json_response['error']['code']).to eq('review_already_exists')
+      expect(json_response['error']['details']['review_id']).to eq(existing.prefixed_id)
+    end
+
     it 'requires a title' do
       expect {
         post :create, params: {

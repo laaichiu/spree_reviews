@@ -136,6 +136,16 @@ RSpec.describe Spree::ReviewEligibility, type: :model do
     expect(eligibility.existing_review).to be_nil
   end
 
+  it 'chooses a later unreviewed purchase when the variant is omitted' do
+    variant = product.default_variant
+    available_order = create(:shipped_order, customer: user, store: store, variants: [variant])
+    reviewed_order = create(:shipped_order, customer: user, store: store, variants: [variant])
+    create(:review, product: product, variant: variant, order: reviewed_order, store: store, customer: user)
+
+    expect(eligibility).to be_can_review
+    expect(eligibility.eligible_order).to eq(available_order)
+  end
+
   it 'rejects a requested order that does not contain the requested variant' do
     variant = create(:reviewable_variant, product: product)
     other_variant = create(:reviewable_variant, product: product)

@@ -29,10 +29,19 @@ module Spree
             )
             return render_review_eligibility_error(eligibility) unless eligibility.can_review?
 
+            purchased_variant = review_variant || Spree::ReviewablePurchase.new(
+              order: eligibility.eligible_order, product: @product
+            ).target_variant
+            if purchased_variant.blank?
+              errors = ActiveModel::Errors.new(Spree::Review.new)
+              errors.add(:variant, :blank)
+              return render_validation_error(errors)
+            end
+
             review = @product.reviews.build(review_params)
             review.store = current_store
             review.customer = current_user
-            review.variant = review_variant
+            review.variant = purchased_variant
             review.order = eligibility.eligible_order
             review.verified_purchase = true
             review.locale ||= current_locale

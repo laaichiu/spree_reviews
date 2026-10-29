@@ -67,35 +67,36 @@ module Spree
       reviews = Spree::Review.for_store(store).for_product(product).where(customer_id: customer.id)
       ordered_reviews = reviews.where(order: review_order)
 
-      exact_review = if variant.present?
-                       ordered_reviews.find_by(variant: variant) ||
+      target_variant = variant || reviewable_purchase_for(review_order).target_variant
+      exact_review = if target_variant.present?
+                       ordered_reviews.find_by(variant: target_variant) ||
                          ordered_reviews.find_by(variant_id: nil)
                      else
                        ordered_reviews.find_by(variant_id: nil)
                      end
-      exact_review || legacy_existing_review_for_order(reviews, review_order)
+      exact_review || legacy_existing_review_for_order(reviews, review_order, target_variant)
     end
 
-    def legacy_existing_review_for_order(reviews, review_order)
+    def legacy_existing_review_for_order(reviews, review_order, target_variant)
       legacy_reviews = reviews.where(order_id: nil)
-      legacy_reviews = if variant.present?
-                         legacy_reviews.where(variant_id: [variant.id, nil])
+      legacy_reviews = if target_variant.present?
+                         legacy_reviews.where(variant_id: [target_variant.id, nil])
                        else
                          legacy_reviews.where(variant_id: nil)
                        end
 
       legacy_reviews.recent_first.detect do |legacy_review|
-        legacy_review_attributed_to_order?(legacy_review, review_order)
+        legacy_review_attributed_to_order?(legacy_review, review_order, target_variant)
       end
     end
 
-    def legacy_review_attributed_to_order?(legacy_review, review_order)
+    def legacy_review_attributed_to_order?(legacy_review, review_order, target_variant)
       attribution_target = Spree::ReviewPurchaseAttribution.new(legacy_review).target
       return false if attribution_target.blank? || attribution_target.order.id != review_order.id
 
-      variant.blank? ||
+      target_variant.blank? ||
         attribution_target.variant.blank? ||
-        attribution_target.variant.id == variant.id
+        attribution_target.variant.id == target_variant.id
     end
 
     def eligible_orders
