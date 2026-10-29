@@ -52,7 +52,15 @@ export function ReviewsPage({ storeId }: RouteProps) {
             <table className="w-full text-left text-sm">
               <thead className="bg-muted/40">
                 <tr>
-                  {['Review', 'Rating', 'Status', 'Verified purchase', 'Submitted'].map((name) => (
+                  {[
+                    'Review',
+                    'Rating',
+                    'Status',
+                    'Helpful',
+                    'Not helpful',
+                    'Verified purchase',
+                    'Submitted',
+                  ].map((name) => (
                     <th key={name} className="px-4 py-3 font-medium">
                       {name}
                     </th>
@@ -74,6 +82,8 @@ export function ReviewsPage({ storeId }: RouteProps) {
                     </td>
                     <td className="px-4 py-3">{review.rating} / 5</td>
                     <td className="px-4 py-3 capitalize">{review.status}</td>
+                    <td className="px-4 py-3 tabular-nums">{review.helpful_count}</td>
+                    <td className="px-4 py-3 tabular-nums">{review.not_helpful_count}</td>
                     <td className="px-4 py-3">{review.verified_purchase ? 'Yes' : 'No'}</td>
                     <td className="px-4 py-3">
                       {new Date(review.created_at).toLocaleDateString()}
@@ -154,6 +164,27 @@ function ReviewEditor({ review, storeId }: { review: Review; storeId: string }) 
       />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(16rem,1fr)]">
         <div className="flex flex-col gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Customer votes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <dl className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <dt className="text-muted-foreground">Helpful</dt>
+                  <dd className="mt-1 text-2xl font-semibold tabular-nums">
+                    {review.helpful_count}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Not helpful</dt>
+                  <dd className="mt-1 text-2xl font-semibold tabular-nums">
+                    {review.not_helpful_count}
+                  </dd>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
           <Card>
             <CardHeader>
               <CardTitle>Review</CardTitle>

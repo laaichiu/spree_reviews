@@ -15,6 +15,8 @@ export interface Review {
   body: string | null
   status: 'pending' | 'approved' | 'rejected'
   verified_purchase: boolean
+  helpful_count: number
+  not_helpful_count: number
   created_at: string
   media: { id: string; url: string | null; alt: string | null }[]
   answers: { id: string; question_label: string; label: string | number | boolean | null }[]
