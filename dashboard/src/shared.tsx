@@ -1,6 +1,6 @@
 import { Button } from '@spree/dashboard-ui'
 import { Link } from '@tanstack/react-router'
-import type { ReactNode } from 'react'
+import type { ReactNode, SelectHTMLAttributes } from 'react'
 
 export interface RouteProps {
   params: Record<string, string>
@@ -51,6 +51,38 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 
 export const inputClass =
   'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground'
+
+export function NativeSelect(props: SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <span style={{ display: 'block', position: 'relative' }}>
+      <select
+        {...props}
+        className={inputClass}
+        style={{ appearance: 'none', paddingRight: '2.5rem' }}
+      />
+      <svg
+        aria-hidden="true"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{
+          position: 'absolute',
+          right: '12px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          pointerEvents: 'none',
+        }}
+      >
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+    </span>
+  )
+}
 
 export function Pagination({
   page,

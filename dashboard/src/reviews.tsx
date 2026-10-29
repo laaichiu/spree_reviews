@@ -12,7 +12,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { reviewsClient } from './client'
 import type { RouteProps } from './shared'
-import { AppLink, ErrorMessage, Field, href, inputClass, Pagination } from './shared'
+import { AppLink, ErrorMessage, Field, href, inputClass, NativeSelect, Pagination } from './shared'
 import type { Review } from './types'
 
 export function ReviewsPage({ storeId }: RouteProps) {
@@ -24,12 +24,11 @@ export function ReviewsPage({ storeId }: RouteProps) {
   })
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <PageHeader title="Reviews" subtitle="Review customer feedback and moderation status." />
       <div className="max-w-48">
         <Field label="Status">
-          <select
-            className={inputClass}
+          <NativeSelect
             value={status}
             onChange={(event) => {
               setStatus(event.target.value)
@@ -40,7 +39,7 @@ export function ReviewsPage({ storeId }: RouteProps) {
             <option value="pending">Pending</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
-          </select>
+          </NativeSelect>
         </Field>
       </div>
       {query.isPending ? (
@@ -130,14 +129,18 @@ function ReviewEditor({ review, storeId }: { review: Review; storeId: string }) 
       return reviewsClient.moderate(review.id, action)
     },
     onSuccess: (_data, action) => {
-      void queryClient.invalidateQueries({ queryKey: ['spree-review', storeId, review.id] })
-      void queryClient.invalidateQueries({ queryKey: ['spree-reviews', storeId] })
+      void queryClient.invalidateQueries({
+        queryKey: ['spree-review', storeId, review.id],
+      })
+      void queryClient.invalidateQueries({
+        queryKey: ['spree-reviews', storeId],
+      })
       if (action === 'delete') window.location.assign(href(storeId, 'reviews'))
     },
   })
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <AppLink
         className="text-sm text-muted-foreground hover:underline"
         storeId={storeId}
@@ -150,12 +153,12 @@ function ReviewEditor({ review, storeId }: { review: Review; storeId: string }) 
         subtitle={`${review.status} · ${review.verified_purchase ? 'Verified purchase' : 'Purchase not verified'}`}
       />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(16rem,1fr)]">
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
               <CardTitle>Review</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="flex flex-col gap-4">
               <Field label="Title">
                 <Input
                   maxLength={120}
@@ -165,8 +168,7 @@ function ReviewEditor({ review, storeId }: { review: Review; storeId: string }) 
                 />
               </Field>
               <Field label="Rating">
-                <select
-                  className={inputClass}
+                <NativeSelect
                   value={rating}
                   disabled={!canEdit}
                   onChange={(event) => setRating(Number(event.target.value))}
@@ -176,7 +178,7 @@ function ReviewEditor({ review, storeId }: { review: Review; storeId: string }) 
                       {value} / 5
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               </Field>
               <Field label="Review content">
                 <textarea
@@ -233,7 +235,7 @@ function ReviewEditor({ review, storeId }: { review: Review; storeId: string }) 
                 <CardTitle>Answers</CardTitle>
               </CardHeader>
               <CardContent>
-                <dl className="space-y-3 text-sm">
+                <dl className="flex flex-col gap-3 text-sm">
                   {review.answers.map((answer) => (
                     <div key={answer.id}>
                       <dt className="font-medium">{answer.question_label}</dt>
@@ -271,7 +273,7 @@ function ReviewEditor({ review, storeId }: { review: Review; storeId: string }) 
             <CardTitle>Purchase context</CardTitle>
           </CardHeader>
           <CardContent>
-            <dl className="space-y-4 text-sm">
+            <dl className="flex flex-col gap-4 text-sm">
               <div>
                 <dt className="text-muted-foreground">Product</dt>
                 <dd>

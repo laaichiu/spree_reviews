@@ -12,7 +12,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useId, useState } from 'react'
 import { reviewsClient } from './client'
 import type { RouteProps } from './shared'
-import { AppLink, ErrorMessage, Field, href, inputClass, Pagination } from './shared'
+import { AppLink, ErrorMessage, Field, href, NativeSelect, Pagination } from './shared'
 import type { Choice, Question, QuestionOption } from './types'
 
 export function QuestionsPage({ storeId }: RouteProps) {
@@ -23,7 +23,7 @@ export function QuestionsPage({ storeId }: RouteProps) {
     queryFn: () => reviewsClient.questions(page),
   })
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Review questions"
         subtitle="Choose the questions customers answer for a product or category."
@@ -32,7 +32,7 @@ export function QuestionsPage({ storeId }: RouteProps) {
         <AppLink
           storeId={storeId}
           path="review-questions/new"
-          className="inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          className="inline-flex self-start rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
         >
           New question
         </AppLink>
@@ -150,14 +150,19 @@ function QuestionEditor({ storeId, initial }: { storeId: string; initial?: Quest
         filterable,
         active,
         position,
-        options: options.map((option, index) => ({ ...option, position: index })),
+        options: options.map((option, index) => ({
+          ...option,
+          position: index,
+        })),
       }
       return initial
         ? reviewsClient.updateQuestion(initial.id, payload)
         : reviewsClient.createQuestion(payload)
     },
     onSuccess: (result, action) => {
-      void queryClient.invalidateQueries({ queryKey: ['spree-review-questions', storeId] })
+      void queryClient.invalidateQueries({
+        queryKey: ['spree-review-questions', storeId],
+      })
       if (action === 'delete') window.location.assign(href(storeId, 'review-questions'))
       else if (!initial && result)
         window.location.assign(href(storeId, `review-questions/${result.id}`))
@@ -176,7 +181,7 @@ function QuestionEditor({ storeId, initial }: { storeId: string; initial?: Quest
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <AppLink
         className="text-sm text-muted-foreground hover:underline"
         storeId={storeId}
@@ -192,7 +197,7 @@ function QuestionEditor({ storeId, initial }: { storeId: string; initial?: Quest
         <CardHeader>
           <CardTitle>Question</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="flex flex-col gap-4">
           <Field label="Label">
             <Input
               value={label}
@@ -213,8 +218,7 @@ function QuestionEditor({ storeId, initial }: { storeId: string; initial?: Quest
             collecting answers.
           </p>
           <Field label="Answer type">
-            <select
-              className={inputClass}
+            <NativeSelect
               value={kind}
               disabled={!canEdit}
               onChange={(event) => setKind(event.target.value as Question['kind'])}
@@ -224,11 +228,10 @@ function QuestionEditor({ storeId, initial }: { storeId: string; initial?: Quest
               <option value="scale">Scale</option>
               <option value="boolean">Yes or no</option>
               <option value="text">Text</option>
-            </select>
+            </NativeSelect>
           </Field>
           <Field label="Applies to">
-            <select
-              className={inputClass}
+            <NativeSelect
               value={scope}
               disabled={!canEdit}
               onChange={(event) => {
@@ -242,11 +245,11 @@ function QuestionEditor({ storeId, initial }: { storeId: string; initial?: Quest
               <option value="store">All products in this store</option>
               <option value="category">Category and its descendants</option>
               <option value="product">A specific product</option>
-            </select>
+            </NativeSelect>
           </Field>
           {scope !== 'store' && (
-            <div className="space-y-3">
-              <div className="space-y-2">
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2">
                 <label htmlFor={choiceSearchId} className="text-sm font-medium">
                   Search {scope === 'category' ? 'categories' : 'products'}
                 </label>
@@ -270,8 +273,7 @@ function QuestionEditor({ storeId, initial }: { storeId: string; initial?: Quest
                 </div>
               </div>
               <Field label={scope === 'category' ? 'Category' : 'Product'}>
-                <select
-                  className={inputClass}
+                <NativeSelect
                   value={scope === 'category' ? categoryId : productId}
                   disabled={!canEdit || choices.isPending}
                   onChange={(event) => {
@@ -297,7 +299,7 @@ function QuestionEditor({ storeId, initial }: { storeId: string; initial?: Quest
                       {choice.pretty_name || choice.name}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               </Field>
               {choices.data && choices.data.meta.pages > 1 && (
                 <Pagination
@@ -350,7 +352,7 @@ function QuestionEditor({ storeId, initial }: { storeId: string; initial?: Quest
           <CardHeader>
             <CardTitle>Answer options</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="flex flex-col gap-3">
             {options.map(
               (option, index) =>
                 !option._destroy && (
@@ -383,7 +385,7 @@ function QuestionEditor({ storeId, initial }: { storeId: string; initial?: Quest
                     </label>
                     {canEdit && (
                       <Button
-                        className="self-end"
+                        className="self-end justify-self-start"
                         variant="outline"
                         onClick={() =>
                           option.id
@@ -399,11 +401,17 @@ function QuestionEditor({ storeId, initial }: { storeId: string; initial?: Quest
             )}
             {canEdit && (
               <Button
+                className="self-start"
                 variant="outline"
                 onClick={() =>
                   setOptions((current) => [
                     ...current,
-                    { value: '', label: '', active: true, position: current.length },
+                    {
+                      value: '',
+                      label: '',
+                      active: true,
+                      position: current.length,
+                    },
                   ])
                 }
               >
