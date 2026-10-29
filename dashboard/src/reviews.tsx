@@ -166,27 +166,6 @@ function ReviewEditor({ review, storeId }: { review: Review; storeId: string }) 
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Customer votes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <dl className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <dt className="text-muted-foreground">Helpful</dt>
-                  <dd className="mt-1 text-2xl font-semibold tabular-nums">
-                    {review.helpful_count}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Not helpful</dt>
-                  <dd className="mt-1 text-2xl font-semibold tabular-nums">
-                    {review.not_helpful_count}
-                  </dd>
-                </div>
-              </dl>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
               <CardTitle>Review</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
@@ -299,63 +278,86 @@ function ReviewEditor({ review, storeId }: { review: Review; storeId: string }) 
             </Card>
           )}
         </div>
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle>Purchase context</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <dl className="flex flex-col gap-4 text-sm">
-              <div>
-                <dt className="text-muted-foreground">Product</dt>
-                <dd>
-                  <AppLink
-                    className="hover:underline"
-                    storeId={storeId}
-                    path={`products/${review.product_id}`}
-                  >
-                    {product.data?.name || review.product_id}
-                  </AppLink>
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Customer</dt>
-                <dd>
-                  {review.customer_id ? (
+        <div className="flex flex-col gap-6">
+          <Card className="h-fit">
+            <CardHeader>
+              <CardTitle>Customer votes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <dl className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <dt className="text-muted-foreground">Helpful</dt>
+                  <dd className="mt-1 text-2xl font-semibold tabular-nums">
+                    {review.helpful_count}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Not helpful</dt>
+                  <dd className="mt-1 text-2xl font-semibold tabular-nums">
+                    {review.not_helpful_count}
+                  </dd>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
+          <Card className="h-fit">
+            <CardHeader>
+              <CardTitle>Purchase context</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <dl className="flex flex-col gap-4 text-sm">
+                <div>
+                  <dt className="text-muted-foreground">Product</dt>
+                  <dd>
                     <AppLink
                       className="hover:underline"
                       storeId={storeId}
-                      path={`customers/${review.customer_id}`}
+                      path={`products/${review.product_id}`}
                     >
-                      {review.reviewer_name || 'Customer'}
+                      {product.data?.name || review.product_id}
                     </AppLink>
-                  ) : (
-                    review.reviewer_name || 'Anonymous'
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Order</dt>
-                <dd>
-                  {review.order_id ? (
-                    <AppLink
-                      className="hover:underline"
-                      storeId={storeId}
-                      path={`orders/${review.order_id}`}
-                    >
-                      {review.order_id}
-                    </AppLink>
-                  ) : (
-                    'Not attributed'
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Variant</dt>
-                <dd>{review.variant_id || 'Not attributed'}</dd>
-              </div>
-            </dl>
-          </CardContent>
-        </Card>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Customer</dt>
+                  <dd>
+                    {review.customer_id ? (
+                      <AppLink
+                        className="hover:underline"
+                        storeId={storeId}
+                        path={`customers/${review.customer_id}`}
+                      >
+                        {review.reviewer_name || 'Customer'}
+                      </AppLink>
+                    ) : (
+                      review.reviewer_name || 'Anonymous'
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Order</dt>
+                  <dd>
+                    {review.order_id ? (
+                      <AppLink
+                        className="hover:underline"
+                        storeId={storeId}
+                        path={`orders/${review.order_id}`}
+                      >
+                        {review.order_id}
+                      </AppLink>
+                    ) : (
+                      'Not attributed'
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Variant</dt>
+                  <dd>{review.variant_id || 'Not attributed'}</dd>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )
