@@ -281,34 +281,13 @@ function ReviewEditor({ review, storeId }: { review: Review; storeId: string }) 
         <div className="flex flex-col gap-6">
           <Card className="h-fit">
             <CardHeader>
-              <CardTitle>Customer votes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <dl className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <dt className="text-muted-foreground">Helpful</dt>
-                  <dd className="mt-1 text-2xl font-semibold tabular-nums">
-                    {review.helpful_count}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Not helpful</dt>
-                  <dd className="mt-1 text-2xl font-semibold tabular-nums">
-                    {review.not_helpful_count}
-                  </dd>
-                </div>
-              </dl>
-            </CardContent>
-          </Card>
-          <Card className="h-fit">
-            <CardHeader>
-              <CardTitle>Purchase context</CardTitle>
+              <CardTitle>Details</CardTitle>
             </CardHeader>
             <CardContent>
               <dl className="flex flex-col gap-4 text-sm">
                 <div>
                   <dt className="text-muted-foreground">Product</dt>
-                  <dd>
+                  <dd className="font-medium">
                     <AppLink
                       className="hover:underline"
                       storeId={storeId}
@@ -320,7 +299,7 @@ function ReviewEditor({ review, storeId }: { review: Review; storeId: string }) 
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Customer</dt>
-                  <dd>
+                  <dd className="font-medium">
                     {review.customer_id ? (
                       <AppLink
                         className="hover:underline"
@@ -336,7 +315,7 @@ function ReviewEditor({ review, storeId }: { review: Review; storeId: string }) 
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Order</dt>
-                  <dd>
+                  <dd className="font-medium">
                     {review.order_id ? (
                       <AppLink
                         className="hover:underline"
@@ -352,7 +331,29 @@ function ReviewEditor({ review, storeId }: { review: Review; storeId: string }) 
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Variant</dt>
-                  <dd>{review.variant_id || 'Not attributed'}</dd>
+                  <dd className="font-medium">{review.variant_id || 'Not attributed'}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Locale</dt>
+                  <dd className="font-medium">{review.locale || '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Helpful votes</dt>
+                  <dd className="font-medium tabular-nums">
+                    {review.helpful_count} helpful · {review.not_helpful_count} not helpful
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Submitted</dt>
+                  <dd className="font-medium">
+                    {new Date(review.created_at).toLocaleString()}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Updated</dt>
+                  <dd className="font-medium">
+                    {new Date(review.updated_at).toLocaleString()}
+                  </dd>
                 </div>
               </dl>
             </CardContent>
